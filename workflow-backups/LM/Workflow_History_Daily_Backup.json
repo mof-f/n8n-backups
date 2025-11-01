@@ -1,12 +1,12 @@
 {
-  "versionid": "7da99135-5d38-4d96-bf6a-3281deff2876",
+  "versionid": "f95425ab-cf62-419e-a4bd-a5ee42006cc5",
   "workflowid": "a320jffax14BKpmm",
-  "createdat": "2025-11-01T12:20:10.913Z",
-  "updatedat": "2025-11-01T12:20:10.913Z",
+  "createdat": "2025-11-01T11:31:19.454Z",
+  "updatedat": "2025-11-01T11:31:19.454Z",
   "nodes": [
     {
       "parameters": {
-        "content": "## Version Control\n2025-11-01 22:01 LM - initial deploy\n2025-11-01 22:01 LM - adapted for multi-database local setup",
+        "content": "## Version Control\n2025-07-27 18:02 - initial deploy\n",
         "height": 300,
         "width": 800,
         "color": 4
@@ -14,85 +14,11 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        352,
-        128
+        48,
+        448
       ],
       "id": "ae529b4c-bde6-471a-8a98-8a4279184d59",
       "name": "Sticky Note1"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "CREATE TABLE IF NOT EXISTS public.n8n_workflow_history_archive (\n  versionId TEXT PRIMARY KEY,\n  workflowId TEXT,\n  createdAt TIMESTAMPTZ,\n  updatedAt TIMESTAMPTZ,\n  nodes JSON,\n  connections JSON\n);",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        496,
-        624
-      ],
-      "id": "25287f29-de88-4e51-95b1-9eb884c8b61a",
-      "name": "Create Archive Table",
-      "credentials": {
-        "postgres": {
-          "id": "g17YnMWQWdvNOGyX",
-          "name": "Postgres - postgres_fullaccess"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT \n  \"versionId\", \n  id AS \"workflowId\",\n  name AS workflow_name,  -- ← ADD THIS\n  \"createdAt\", \n  \"updatedAt\", \n  nodes, \n  connections\nFROM workflow_entity\nWHERE \"isArchived\" = false\nORDER BY id ASC;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        720,
-        512
-      ],
-      "id": "d046fb1a-dc56-4518-9e28-bef57b78fa0c",
-      "name": "Get Current Workflows",
-      "credentials": {
-        "postgres": {
-          "id": "YVUO1Pvf91ur8Frz",
-          "name": "Postgres - n8n readonly"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT \n  h.\"versionId\", \n  h.\"workflowId\",\n  e.name AS workflow_name,  -- ← ADD THIS\n  h.\"createdAt\", \n  h.\"updatedAt\", \n  h.nodes, \n  h.connections\nFROM workflow_history h\nLEFT JOIN workflow_entity e ON h.\"workflowId\" = e.id\nORDER BY h.\"versionId\" ASC;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        720,
-        720
-      ],
-      "id": "8cc637a2-a453-4bbe-9315-9b947c3c2192",
-      "name": "Get Historical Workflows",
-      "credentials": {
-        "postgres": {
-          "id": "YVUO1Pvf91ur8Frz",
-          "name": "Postgres - n8n readonly"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [
-        944,
-        624
-      ],
-      "id": "bffa69be-aa80-4a23-bef3-37460cec4788",
-      "name": "Combine All Workflows"
     },
     {
       "parameters": {
@@ -108,40 +34,188 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        288,
-        624
+        272,
+        208
       ],
-      "id": "a859b5a2-513e-43fe-817f-a134b0e19e27",
-      "name": "Daily - 7am1"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Remove duplicates, keeping the one with latest updatedAt\nconst items = $input.all();\nconst versionMap = new Map();\n\nfor (const item of items) {\n  const versionId = item.json.versionId;\n  const updatedAt = new Date(item.json.updatedAt);\n  \n  if (!versionMap.has(versionId)) {\n    // First time seeing this versionId\n    versionMap.set(versionId, item);\n  } else {\n    // We've seen this versionId - keep the newer one\n    const existing = versionMap.get(versionId);\n    const existingUpdatedAt = new Date(existing.json.updatedAt);\n    \n    if (updatedAt > existingUpdatedAt) {\n      versionMap.set(versionId, item);\n    }\n  }\n}\n\nreturn Array.from(versionMap.values());"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1152,
-        624
-      ],
-      "id": "388c6546-1929-4534-a751-c498ab424f50",
-      "name": "keepMostRecentDuplicate"
+      "id": "1a5c2087-ec87-482f-a813-ff4173ca44f1",
+      "name": "Daily - 7am"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.n8n_workflow_history_archive (\n  versionId,\n  workflowId,\n  workflow_name,\n  createdAt,\n  updatedAt,\n  nodes,\n  connections\n)\nVALUES (\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6::json,\n  $7::json\n)\nON CONFLICT (versionId) \nDO UPDATE SET\n  workflowId = EXCLUDED.workflowId,\n  workflow_name = EXCLUDED.workflow_name,\n  createdAt = EXCLUDED.createdAt,\n  updatedAt = EXCLUDED.updatedAt,\n  nodes = EXCLUDED.nodes,\n  connections = EXCLUDED.connections;",
+        "query": "CREATE TABLE IF NOT EXISTS public.n8n_workflow_history_archive (\n  versionId TEXT PRIMARY KEY,\n  workflowId TEXT,\n  createdAt TIMESTAMPTZ,\n  updatedAt TIMESTAMPTZ,\n  nodes JSON,\n  connections JSON\n  -- Optionally add: name, owner, metadata, etc\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        480,
+        208
+      ],
+      "id": "baa2e324-cff6-48a0-b842-be47e55de680",
+      "name": "createWorkflowHistoryArchive",
+      "credentials": {
+        "postgres": {
+          "id": "g17YnMWQWdvNOGyX",
+          "name": "Postgres - postgres_fullaccess"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.n8n_workflow_history_archive (\n  versionId, workflowId, createdAt, updatedAt, nodes, connections\n)\nSELECT \n  \"versionId\", \n  \"workflowId\", \n  \"createdAt\", \n  \"updatedAt\", \n  nodes, \n  connections\nFROM n8n.workflow_history\nON CONFLICT (versionId) DO NOTHING;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        544,
+        -144
+      ],
+      "id": "d52a62e8-a119-487b-b315-f57555e53107",
+      "name": "Insert Workflow History to Archive",
+      "credentials": {
+        "postgres": {
+          "id": "g17YnMWQWdvNOGyX",
+          "name": "Postgres - postgres_fullaccess"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Summary\n### Copies all the workflow_history Rows to my public.n8n_workflow_history_archive table",
+        "height": 140,
+        "width": 400,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2982b5c2-16a6-417c-a309-04a77c96dd78",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  \"versionId\", \n  \"workflowId\", \n  \"createdAt\", \n  \"updatedAt\", \n  nodes, \n  connections\nFROM workflow_history\nORDER BY \"createdAt\" DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        704,
+        208
+      ],
+      "id": "2d1f54b1-0f8d-4050-9644-21aab98e87f8",
+      "name": "Read from n8n DB",
+      "credentials": {
+        "postgres": {
+          "id": "YVUO1Pvf91ur8Frz",
+          "name": "Postgres - n8n readonly"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "n8n_workflow_history_archive"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nodes": "={{ $json.nodes }}",
+            "connections": "={{ $json.connections }}",
+            "versionid": "={{ $json.versionId }}",
+            "workflowid": "={{ $json.workflowId }}",
+            "createdat": "={{ $json.createdAt }}",
+            "updatedat": "={{ $json.updatedAt }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "versionid",
+              "displayName": "versionid",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "workflowid",
+              "displayName": "workflowid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "createdat",
+              "displayName": "createdat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "updatedat",
+              "displayName": "updatedat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nodes",
+              "displayName": "nodes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "connections",
+              "displayName": "connections",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
-          "queryReplacement": "={{ $json.versionId }}\n{{ $json.workflowId }}\n{{ $json.workflow_name }}\n{{ $json.createdAt }}\n{{ $json.updatedAt }}\n{{ JSON.stringify($json.nodes) }}\n{{ JSON.stringify($json.connections) }}"
+          "skipOnConflict": true
         }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1360,
-        624
+        928,
+        208
       ],
-      "id": "c5d60d5f-dcc1-4da2-b2c7-bac62ce48826",
+      "id": "bad8d7d7-9b4e-46be-a8e9-4a8a94cc1d96",
       "name": "Insert into Archive",
       "credentials": {
         "postgres": {
@@ -152,67 +226,29 @@
     }
   ],
   "connections": {
-    "Create Archive Table": {
+    "Daily - 7am": {
       "main": [
         [
           {
-            "node": "Get Current Workflows",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Get Historical Workflows",
+            "node": "createWorkflowHistoryArchive",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Current Workflows": {
+    "createWorkflowHistoryArchive": {
       "main": [
         [
           {
-            "node": "Combine All Workflows",
+            "node": "Read from n8n DB",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Historical Workflows": {
-      "main": [
-        [
-          {
-            "node": "Combine All Workflows",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Combine All Workflows": {
-      "main": [
-        [
-          {
-            "node": "keepMostRecentDuplicate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Daily - 7am1": {
-      "main": [
-        [
-          {
-            "node": "Create Archive Table",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "keepMostRecentDuplicate": {
+    "Read from n8n DB": {
       "main": [
         [
           {
