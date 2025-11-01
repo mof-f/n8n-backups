@@ -1,12 +1,12 @@
 {
-  "versionid": "f95425ab-cf62-419e-a4bd-a5ee42006cc5",
+  "versionid": "2624a460-c883-4aa0-8006-d0d8312f8525",
   "workflowid": "a320jffax14BKpmm",
-  "createdat": "2025-11-01T11:31:19.454Z",
-  "updatedat": "2025-11-01T11:31:19.454Z",
+  "createdat": "2025-11-01T11:31:49.589Z",
+  "updatedat": "2025-11-01T11:31:49.589Z",
   "nodes": [
     {
       "parameters": {
-        "content": "## Version Control\n2025-07-27 18:02 - initial deploy\n",
+        "content": "## Version Control\n2025-11-01 22:01 LM - initial deploy\n2025-11-01 22:01 LM - adapted for multi-database local setup",
         "height": 300,
         "width": 800,
         "color": 4
@@ -14,8 +14,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        48,
-        448
+        256,
+        384
       ],
       "id": "ae529b4c-bde6-471a-8a98-8a4279184d59",
       "name": "Sticky Note1"
@@ -70,8 +70,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        544,
-        -144
+        928,
+        48
       ],
       "id": "d52a62e8-a119-487b-b315-f57555e53107",
       "name": "Insert Workflow History to Archive",
@@ -81,22 +81,6 @@
           "name": "Postgres - postgres_fullaccess"
         }
       }
-    },
-    {
-      "parameters": {
-        "content": "## Summary\n### Copies all the workflow_history Rows to my public.n8n_workflow_history_archive table",
-        "height": 140,
-        "width": 400,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        0,
-        0
-      ],
-      "id": "2982b5c2-16a6-417c-a309-04a77c96dd78",
-      "name": "Sticky Note"
     },
     {
       "parameters": {
