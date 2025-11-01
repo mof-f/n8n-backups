@@ -1,12 +1,12 @@
 {
-  "versionid": "e834f822-f31b-4a9b-a748-d410b8497253",
+  "versionid": "d787e9c1-76f3-4625-91ba-9f729eb12fe5",
   "workflowid": "a320jffax14BKpmm",
-  "createdat": "2025-11-01T11:27:00.939Z",
-  "updatedat": "2025-11-01T11:27:00.939Z",
+  "createdat": "2025-11-01T12:48:32.051Z",
+  "updatedat": "2025-11-01T12:48:32.051Z",
   "nodes": [
     {
       "parameters": {
-        "content": "## Version Control\n2025-07-27 18:02 - initial deploy\n",
+        "content": "## Version Control\n2025-11-01 22:01 LM - initial deploy\n2025-11-01 22:01 LM - adapted for multi-database local setup",
         "height": 300,
         "width": 800,
         "color": 4
@@ -14,46 +14,26 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        48,
-        448
+        352,
+        128
       ],
       "id": "ae529b4c-bde6-471a-8a98-8a4279184d59",
       "name": "Sticky Note1"
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 0 */6 * * *"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        272,
-        208
-      ],
-      "id": "1a5c2087-ec87-482f-a813-ff4173ca44f1",
-      "name": "Daily - 7am"
-    },
-    {
-      "parameters": {
         "operation": "executeQuery",
-        "query": "CREATE TABLE IF NOT EXISTS public.n8n_workflow_history_archive (\n  versionId TEXT PRIMARY KEY,\n  workflowId TEXT,\n  createdAt TIMESTAMPTZ,\n  updatedAt TIMESTAMPTZ,\n  nodes JSON,\n  connections JSON\n  -- Optionally add: name, owner, metadata, etc\n);",
+        "query": "CREATE TABLE IF NOT EXISTS public.n8n_workflow_history_archive (\n  versionId TEXT PRIMARY KEY,\n  workflowId TEXT,\n  createdAt TIMESTAMPTZ,\n  updatedAt TIMESTAMPTZ,\n  nodes JSON,\n  connections JSON\n);",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        480,
-        208
+        496,
+        624
       ],
-      "id": "baa2e324-cff6-48a0-b842-be47e55de680",
-      "name": "createWorkflowHistoryArchive",
+      "id": "25287f29-de88-4e51-95b1-9eb884c8b61a",
+      "name": "Create Archive Table",
       "credentials": {
         "postgres": {
           "id": "g17YnMWQWdvNOGyX",
@@ -64,52 +44,211 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.n8n_workflow_history_archive (\n  versionId, workflowId, createdAt, updatedAt, nodes, connections\n)\nSELECT \n  \"versionId\", \n  \"workflowId\", \n  \"createdAt\", \n  \"updatedAt\", \n  nodes, \n  connections\nFROM n8n.workflow_history\nON CONFLICT (versionId) DO NOTHING;",
+        "query": "SELECT \n  \"versionId\", \n  id AS \"workflowId\",\n  name AS workflow_name,  -- ← ADD THIS\n  \"createdAt\", \n  \"updatedAt\", \n  nodes, \n  connections\nFROM workflow_entity\nWHERE \"isArchived\" = false\nORDER BY id ASC;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        704,
-        208
+        720,
+        512
       ],
-      "id": "d52a62e8-a119-487b-b315-f57555e53107",
-      "name": "Insert Workflow History to Archive"
+      "id": "d046fb1a-dc56-4518-9e28-bef57b78fa0c",
+      "name": "Get Current Workflows",
+      "credentials": {
+        "postgres": {
+          "id": "YVUO1Pvf91ur8Frz",
+          "name": "Postgres - n8n readonly"
+        }
+      }
     },
     {
       "parameters": {
-        "content": "## Summary\n### Copies all the workflow_history Rows to my public.n8n_workflow_history_archive table",
-        "height": 140,
-        "width": 400,
-        "color": 6
+        "operation": "executeQuery",
+        "query": "SELECT \n  h.\"versionId\", \n  h.\"workflowId\",\n  e.name AS workflow_name,  -- ← ADD THIS\n  h.\"createdAt\", \n  h.\"updatedAt\", \n  h.nodes, \n  h.connections\nFROM workflow_history h\nLEFT JOIN workflow_entity e ON h.\"workflowId\" = e.id\nORDER BY h.\"versionId\" ASC;",
+        "options": {}
       },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
       "position": [
-        0,
-        0
+        720,
+        720
       ],
-      "id": "2982b5c2-16a6-417c-a309-04a77c96dd78",
-      "name": "Sticky Note"
+      "id": "8cc637a2-a453-4bbe-9315-9b947c3c2192",
+      "name": "Get Historical Workflows",
+      "credentials": {
+        "postgres": {
+          "id": "YVUO1Pvf91ur8Frz",
+          "name": "Postgres - n8n readonly"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        944,
+        624
+      ],
+      "id": "bffa69be-aa80-4a23-bef3-37460cec4788",
+      "name": "Combine All Workflows"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Remove duplicates, keeping the one with latest updatedAt\nconst items = $input.all();\nconst versionMap = new Map();\n\nfor (const item of items) {\n  const versionId = item.json.versionId;\n  const updatedAt = new Date(item.json.updatedAt);\n  \n  if (!versionMap.has(versionId)) {\n    // First time seeing this versionId\n    versionMap.set(versionId, item);\n  } else {\n    // We've seen this versionId - keep the newer one\n    const existing = versionMap.get(versionId);\n    const existingUpdatedAt = new Date(existing.json.updatedAt);\n    \n    if (updatedAt > existingUpdatedAt) {\n      versionMap.set(versionId, item);\n    }\n  }\n}\n\nreturn Array.from(versionMap.values());"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        624
+      ],
+      "id": "388c6546-1929-4534-a751-c498ab424f50",
+      "name": "keepMostRecentDuplicate"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.n8n_workflow_history_archive (\n  versionId,\n  workflowId,\n  workflow_name,\n  createdAt,\n  updatedAt,\n  nodes,\n  connections\n)\nVALUES (\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6::json,\n  $7::json\n)\nON CONFLICT (versionId) \nDO UPDATE SET\n  workflowId = EXCLUDED.workflowId,\n  workflow_name = EXCLUDED.workflow_name,\n  createdAt = EXCLUDED.createdAt,\n  updatedAt = EXCLUDED.updatedAt,\n  nodes = EXCLUDED.nodes,\n  connections = EXCLUDED.connections;",
+        "options": {
+          "queryReplacement": "={{ $json.versionId }}\n{{ $json.workflowId }}\n{{ $json.workflow_name }}\n{{ $json.createdAt }}\n{{ $json.updatedAt }}\n{{ JSON.stringify($json.nodes) }}\n{{ JSON.stringify($json.connections) }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1360,
+        624
+      ],
+      "id": "c5d60d5f-dcc1-4da2-b2c7-bac62ce48826",
+      "name": "Insert into Archive",
+      "credentials": {
+        "postgres": {
+          "id": "g17YnMWQWdvNOGyX",
+          "name": "Postgres - postgres_fullaccess"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        624
+      ],
+      "id": "a859b5a2-513e-43fe-817f-a134b0e19e27",
+      "name": "Daily - Midnight"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "5Pr5KzYB3atpXtER",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/5Pr5KzYB3atpXtER",
+          "cachedResultName": "Workflow Backup to Github"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1568,
+        624
+      ],
+      "id": "f552c0ea-f334-433c-a916-20062d1fb3a5",
+      "name": "Call 'Workflow Backup to Github'"
     }
   ],
   "connections": {
-    "Daily - 7am": {
+    "Create Archive Table": {
       "main": [
         [
           {
-            "node": "createWorkflowHistoryArchive",
+            "node": "Get Current Workflows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Historical Workflows",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "createWorkflowHistoryArchive": {
+    "Get Current Workflows": {
       "main": [
         [
           {
-            "node": "Insert Workflow History to Archive",
+            "node": "Combine All Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Historical Workflows": {
+      "main": [
+        [
+          {
+            "node": "Combine All Workflows",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Combine All Workflows": {
+      "main": [
+        [
+          {
+            "node": "keepMostRecentDuplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "keepMostRecentDuplicate": {
+      "main": [
+        [
+          {
+            "node": "Insert into Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily - Midnight": {
+      "main": [
+        [
+          {
+            "node": "Create Archive Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert into Archive": {
+      "main": [
+        [
+          {
+            "node": "Call 'Workflow Backup to Github'",
             "type": "main",
             "index": 0
           }
