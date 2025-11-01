@@ -1,8 +1,8 @@
 {
-  "versionid": "45b02d9d-b188-47f6-a9f4-d8173d724b7e",
+  "versionid": "5fc1fd30-923c-4da7-be34-6274b75a7fce",
   "workflowid": "5Pr5KzYB3atpXtER",
-  "createdat": "2025-11-01T12:47:33.138Z",
-  "updatedat": "2025-11-01T12:47:33.138Z",
+  "createdat": "2025-11-01T12:47:18.351Z",
+  "updatedat": "2025-11-01T12:47:18.351Z",
   "nodes": [
     {
       "parameters": {
@@ -55,7 +55,7 @@
     },
     {
       "parameters": {
-        "content": "## Version Control\n2025-11-01 23:17 LM - adapted for two DB setup\n",
+        "content": "## Version Control\n2025-05-16 18:43 - initial commit - working\n2025-07-24 18:31 - added SWF for getVars and ordered last query before loop\n",
         "height": 480,
         "width": 940,
         "color": 4
@@ -63,8 +63,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -416,
-        720
+        -1472,
+        736
       ],
       "id": "ce01591d-a970-4328-9b5f-0fde9653eb2b",
       "name": "Sticky Note2"
