@@ -1,101 +1,23 @@
 {
-  "versionid": "9b31f081-6e4c-4d7b-8342-7e81a086644e",
+  "versionid": "8f44f81d-f0fd-420a-9f4d-9aecdd595f26",
   "workflowid": "5Pr5KzYB3atpXtER",
-  "createdat": "2025-11-01T12:22:21.164Z",
-  "updatedat": "2025-11-01T12:22:21.164Z",
+  "createdat": "2025-11-01T12:50:08.611Z",
+  "updatedat": "2025-11-01T12:50:08.611Z",
   "nodes": [
     {
       "parameters": {
-        "rule": {
-          "interval": [
-            {}
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -368,
-        1008
-      ],
-      "id": "6d2357b9-c9f3-4d57-a063-0c46414f7ac8",
-      "name": "Midnight"
-    },
-    {
-      "parameters": {
         "operation": "executeQuery",
-        "query": "CREATE TABLE IF NOT EXISTS public.n8n_workflow_backups (\n  history_id TEXT PRIMARY KEY,\n  workflow_id TEXT NOT NULL,\n  workflow_name TEXT,\n  created_at TIMESTAMP NOT NULL,\n  committed_at TIMESTAMP DEFAULT now(),\n  git_commit TEXT\n);",
+        "query": "CREATE TABLE IF NOT EXISTS public.n8n_workflow_backups (\n  version_id TEXT PRIMARY KEY,\n  workflow_id TEXT NOT NULL,\n  workflow_name TEXT,\n  created_at TIMESTAMP NOT NULL,\n  committed_at TIMESTAMP DEFAULT now(),\n  git_commit TEXT\n);",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -144,
-        800
+        -880,
+        64
       ],
       "id": "e865aabd-fb7c-4fc2-9bb0-8eb776372b69",
       "name": "createTable-n8n_workflow_backups",
-      "credentials": {
-        "postgres": {
-          "id": "g17YnMWQWdvNOGyX",
-          "name": "Postgres - postgres_fullaccess"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT \n  h.\"versionId\" AS history_id,\n  -- e.name AS workflow_name,\n  h.\"workflowId\",\n  h.\"createdAt\",\n  h.\"updatedAt\"\nFROM n8n.workflow_history h\nLEFT JOIN n8n.workflow_entity e ON h.\"workflowId\" = e.id\nLEFT JOIN n8n.n8n_workflow_backups b ON b.history_id = h.\"versionId\"\nWHERE b.history_id IS NULL\n   OR h.\"updatedAt\" > b.committed_at\nORDER BY h.\"createdAt\" ASC;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        -144,
-        1008
-      ],
-      "id": "dc6f0aa1-e223-4faa-b7e7-5bb425095235",
-      "name": "checkExisting",
-      "executeOnce": true,
-      "credentials": {
-        "postgres": {
-          "id": "YVUO1Pvf91ur8Frz",
-          "name": "Postgres - n8n readonly"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "content": "## stuff\n- grant permissions\nGRANT SELECT, INSERT, UPDATE, DELETE ON public.n8n_workflow_backups TO \"sdl001_n8n_user\";\n- grant CREATE for sdl001_otfc_user\nGRANT CREATE ON SCHEMA public TO sdl001_otfc_user;\n\n",
-        "height": 260,
-        "width": 740
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -1168,
-        -816
-      ],
-      "id": "e18ac764-f9d7-48a6-9bc7-e523fceebaa9",
-      "name": "Sticky Note"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT h.\"versionId\" AS history_id,\n\t e.name AS workflow_name,\n\t h.\"workflowId\",\n\t h.\"createdAt\",\n\t h.\"updatedAt\",\n\th.nodes,\n\th.connections\nFROM n8n.workflow_history h\nLEFT JOIN n8n.workflow_entity e on h.\"workflowId\" = e.id\nWHERE  h.\"versionId\"= $1\nORDER BY h.\"createdAt\" ASC;",
-        "options": {
-          "queryReplacement": "={{ $json.history_id }}"
-        }
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        80,
-        1008
-      ],
-      "id": "9287b670-a90c-482d-ad3e-868951c00fb3",
-      "name": "getWorkflowData",
-      "executeOnce": false,
       "credentials": {
         "postgres": {
           "id": "g17YnMWQWdvNOGyX",
@@ -118,7 +40,7 @@
     },
     {
       "parameters": {
-        "content": "## Version Control\n2025-05-16 18:43 - initial commit - working\n2025-07-24 18:31 - added SWF for getVars and ordered last query before loop\n",
+        "content": "## Version Control\n2025-11-01 23:17 LM - adapted for two DB setup\n",
         "height": 480,
         "width": 940,
         "color": 4
@@ -126,22 +48,11 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1472,
-        736
+        -464,
+        688
       ],
       "id": "ce01591d-a970-4328-9b5f-0fde9653eb2b",
       "name": "Sticky Note2"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        -160,
-        160
-      ],
-      "id": "f93dab84-d9b6-424e-97a0-87389974eaeb",
-      "name": "Done"
     },
     {
       "parameters": {
@@ -149,10 +60,8 @@
         "operation": "get",
         "owner": {
           "__rl": true,
-          "value": "Solved-Development-Labs",
-          "mode": "list",
-          "cachedResultName": "Solved-Development-Labs",
-          "cachedResultUrl": "https://github.com/Solved-Development-Labs"
+          "value": "https://github.com/mof-f",
+          "mode": "url"
         },
         "repository": {
           "__rl": true,
@@ -162,7 +71,6 @@
           "cachedResultUrl": "https://github.com/Solved-Development-Labs/n8n-backups"
         },
         "filePath": "={{ $json.fullPath }}",
-        "asBinaryProperty": false,
         "additionalParameters": {}
       },
       "type": "n8n-nodes-base.github",
@@ -175,6 +83,12 @@
       "name": "getSHA",
       "webhookId": "4fe835ed-a4c0-41d3-9aa6-c156fc8464e0",
       "alwaysOutputData": true,
+      "credentials": {
+        "githubApi": {
+          "id": "OqSdWSM3QVtddpjk",
+          "name": "GitHub account"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
@@ -229,10 +143,8 @@
         "resource": "file",
         "owner": {
           "__rl": true,
-          "value": "Solved-Development-Labs",
-          "mode": "list",
-          "cachedResultName": "Solved-Development-Labs",
-          "cachedResultUrl": "https://github.com/Solved-Development-Labs"
+          "value": "https://github.com/mof-f",
+          "mode": "url"
         },
         "repository": {
           "__rl": true,
@@ -255,7 +167,13 @@
       "name": "GitHub-Commit-Create",
       "webhookId": "b43c5cc0-08f7-45a4-bae3-1d0665b1f160",
       "retryOnFail": true,
-      "waitBetweenTries": 5000
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "githubApi": {
+          "id": "OqSdWSM3QVtddpjk",
+          "name": "GitHub account"
+        }
+      }
     },
     {
       "parameters": {
@@ -263,10 +181,8 @@
         "operation": "edit",
         "owner": {
           "__rl": true,
-          "value": "Solved-Development-Labs",
-          "mode": "list",
-          "cachedResultName": "Solved-Development-Labs",
-          "cachedResultUrl": "https://github.com/Solved-Development-Labs"
+          "value": "https://github.com/mof-f",
+          "mode": "url"
         },
         "repository": {
           "__rl": true,
@@ -289,172 +205,27 @@
       "name": "GitHub-Commit-Update",
       "webhookId": "b43c5cc0-08f7-45a4-bae3-1d0665b1f160",
       "retryOnFail": true,
-      "waitBetweenTries": 5000
-    },
-    {
-      "parameters": {
-        "jsCode": "const pad = (n) => String(n).padStart(2, '0');\n\n// Get data - handle invalid dates\nlet dt;\ntry {\n  dt = new Date($json.createdAt);\n  // Check if date is valid\n  if (isNaN(dt.getTime())) {\n    dt = new Date(); // Fallback to current date\n  }\n} catch (e) {\n  dt = new Date(); // Fallback to current date\n}\n\nconst safeName = ($json.workflow_name || 'unnamed').replace(/[^a-zA-Z0-9-_\\\\.]/g, '_');\n\n// Timestamp for commit message only\nconst timestamp = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;\n\n// Final file path\nconst filename = `${safeName}.json`;\nconst filePath = `workflow-backups/${filename}`;\n\n// Output\nreturn [{\n  json: {         \n    fileName: filename,            \n    fullPath: filePath,            \n    commitMessage: `Backup ${safeName} (created_at: ${timestamp})`,\n    createdAt: dt.toISOString(),\n    workflowJson: $json\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -160,
-        368
-      ],
-      "id": "8ee08f02-dd4c-4b80-92cf-ce0473fba066",
-      "name": "addFileOutputValues"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "-- Get all workflow versions from n8n DB\nSELECT \n  h.\"versionId\" AS history_id,\n  e.name AS workflow_name,\n  h.\"workflowId\",\n  h.\"createdAt\",\n  h.\"updatedAt\"\nFROM workflow_history h\nLEFT JOIN workflow_entity e ON h.\"workflowId\" = e.id\nORDER BY h.\"createdAt\" ASC;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        -2448,
-        800
-      ],
-      "id": "0609e7bb-aa41-4319-8122-0e17d397fba4",
-      "name": "Get All Workflow Versions",
-      "executeOnce": true,
+      "waitBetweenTries": 5000,
       "credentials": {
-        "postgres": {
-          "id": "YVUO1Pvf91ur8Frz",
-          "name": "Postgres - n8n readonly"
+        "githubApi": {
+          "id": "OqSdWSM3QVtddpjk",
+          "name": "GitHub account"
         }
       }
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- Get already backed up versions from postgres DB\nSELECT \n  history_id,\n  committed_at\nFROM n8n_workflow_backups;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        -2448,
-        1008
-      ],
-      "id": "7ef37e62-b0e9-401f-81ed-e87cdc8454d8",
-      "name": "Get Backed Up Versions",
-      "executeOnce": true,
-      "alwaysOutputData": true,
-      "credentials": {
-        "postgres": {
-          "id": "g17YnMWQWdvNOGyX",
-          "name": "Postgres - postgres_fullaccess"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [
-        -2224,
-        912
-      ],
-      "id": "ffe54c34-7ffb-47ef-892d-d5f2ca5e974d",
-      "name": "Merge Data",
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "jsCode": "// Filter to only workflows that need backup\nconst allWorkflows = $input.first().json;\nconst backedUpInput = $input.last().json;\n\n// Handle case where backup table is empty\nconst backedUp = Array.isArray(backedUpInput) ? backedUpInput : [];\n\n// Create a map of backed up versions\nconst backedUpMap = {};\nfor (const item of backedUp) {\n  backedUpMap[item.history_id] = new Date(item.committed_at);\n}\n\n// Filter workflows that need backup\nconst needsBackup = allWorkflows.filter(workflow => {\n  const historyId = workflow.history_id;\n  const updatedAt = new Date(workflow.updatedAt);\n  \n  // Never backed up OR updated since last backup\n  if (!backedUpMap[historyId]) {\n    return true; // Never backed up\n  }\n  \n  if (updatedAt > backedUpMap[historyId]) {\n    return true; // Updated since backup\n  }\n  \n  return false;\n});\n\n// If backup table was empty, all workflows need backup\nif (backedUp.length === 0) {\n  console.log(`No previous backups found. Backing up all ${allWorkflows.length} workflow versions.`);\n}\n\nreturn needsBackup.map(w => ({ json: w }));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -2000,
-        912
-      ],
-      "id": "8a60c2e6-44c7-4b7f-816d-fd2cc974e978",
-      "name": "Filter Workflows Needing Backup"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT \n  h.\"versionId\" AS history_id,\n  e.name AS workflow_name,\n  h.\"workflowId\",\n  h.\"createdAt\",\n  h.\"updatedAt\",\n  h.nodes,\n  h.connections\nFROM workflow_history h\nLEFT JOIN workflow_entity e ON h.\"workflowId\" = e.id\nWHERE h.\"versionId\" = $1\nORDER BY h.\"createdAt\" ASC;",
+        "query": "INSERT INTO public.n8n_workflow_backups (\n  version_id,\n  workflow_id,\n  workflow_name,\n  created_at,\n  committed_at,\n  git_commit\n) VALUES (\n   $1, $2, $3, $4, $5, $6\n)\nON CONFLICT (version_id) DO UPDATE\n  SET committed_at = EXCLUDED.committed_at,\n      git_commit = EXCLUDED.git_commit;",
         "options": {
-          "queryReplacement": "={{ $json.history_id }}"
+          "queryReplacement": "={{ $('addFileOutputValues').first().json.workflowJson.versionid }}\n{{ $('addFileOutputValues').first().json.workflowJson.workflowid }}\n{{ $('addFileOutputValues').first().json.workflowJson.workflow_name }}\n{{ $('addFileOutputValues').first().json.workflowJson.createdat }}\n{{ $json.commit.committer.date }}\n{{ $json.commit.sha }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -1776,
-        912
-      ],
-      "id": "ec59d5c8-79bf-4de4-9e4c-cc0be382c34c",
-      "name": "Get Workflow Data",
-      "executeOnce": false,
-      "credentials": {
-        "postgres": {
-          "id": "YVUO1Pvf91ur8Frz",
-          "name": "Postgres - n8n readonly"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 0 0 * * *"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -2672,
-        800
-      ],
-      "id": "6f328756-b5b6-4896-8ee0-1268c0fd5896",
-      "name": "Midnight1"
-    },
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 0 0 * * *"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -1024,
-        352
-      ],
-      "name": "Midnight3",
-      "id": "ded31ec4-e244-4f3b-97bb-fe12e158937d"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "INSERT INTO public.n8n_workflow_backups (\n  history_id,\n  workflow_id,\n  workflow_name,\n  created_at,\n  committed_at,\n  git_commit\n) VALUES (\n   $1, $2, $3, $4, $5, $6\n)\nON CONFLICT (history_id) DO UPDATE\n  SET committed_at = EXCLUDED.committed_at,\n      git_commit = EXCLUDED.git_commit;",
-        "options": {
-          "queryReplacement": "={{ $('addFileOutputValues').item.json.workflowJson.history_id }}, {{ $('addFileOutputValues').item.json.workflowJson.workflowId }},  {{ $('addFileOutputValues').item.json.workflowJson.workflow_name }},{{ $('addFileOutputValues').item.json.workflowJson.createdAt }},{{ $json.commit.committer.date }},{{ $json.commit.sha }}"
-        }
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        944,
-        448
+        928,
+        464
       ],
       "id": "17c336f5-0e18-46cf-94e3-b1bb507af337",
       "name": "Insert Into n8n_workflow_backups",
@@ -484,8 +255,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -816,
-        352
+        -880,
+        272
       ],
       "id": "79e3da49-c34b-4712-9980-361b211a7687",
       "name": "Get from n8n_workflow_history_archive",
@@ -498,86 +269,97 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "0e55eaf6-e578-4c71-b0d7-419d2966ce17",
-              "leftValue": "={{ $json.nodes }}",
-              "rightValue": "",
-              "operator": {
-                "type": "array",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
+        "jsCode": "// const pad = (n) => String(n).padStart(2, '0');\n\n// // Get data - handle invalid dates\n// let dt;\n// try {\n//   dt = new Date($json.createdAt);\n//   // Check if date is valid\n//   if (isNaN(dt.getTime())) {\n//     dt = new Date(); // Fallback to current date\n//   }\n// } catch (e) {\n//   dt = new Date(); // Fallback to current date\n// }\n\n// const safeName = ($json.workflow_name || 'unnamed').replace(/[^a-zA-Z0-9-_\\\\.]/g, '_');\n\n// // Timestamp for commit message only\n// const timestamp = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;\n\n// // Final file path\n// const filename = `${safeName}.json`;\n// const filePath = `workflow-backups/${filename}`;\n\n// // Output\n// return [{\n//   json: {         \n//     fileName: filename,            \n//     fullPath: filePath,            \n//     commitMessage: `Backup ${safeName} (created_at: ${timestamp})`,\n//     createdAt: dt.toISOString(),\n//     workflowJson: $json\n//   }\n// }];\n\n\nconst pad = (n) => String(n).padStart(2, '0');\n\n// Get data - handle invalid dates\nlet dt;\ntry {\n  dt = new Date($json.createdAt);\n  // Check if date is valid\n  if (isNaN(dt.getTime())) {\n    dt = new Date(); // Fallback to current date\n  }\n} catch (e) {\n  dt = new Date(); // Fallback to current date\n}\n\n// Get data\nconst clientCode = 'LM';\nconst safeName = ($json.workflow_name || 'unnamed').replace(/[^a-zA-Z0-9-_\\\\.]/g, '_');\n\n// Timestamp for commit message only\nconst timestamp = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;\n\n// Final file path\nconst filename = `${safeName}.json`;\nconst filePath = `workflow-backups/${clientCode}/${filename}`;\n\n// Output\nreturn [{\n  json: {         \n    fileName: filename,            \n    fullPath: filePath,            \n    commitMessage: `Backup ${safeName} (created_at: ${timestamp})`,\n    createdAt: dt.toISOString(),\n    workflowJson: $json\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        368
+      ],
+      "id": "8ee08f02-dd4c-4b80-92cf-ce0473fba066",
+      "name": "addFileOutputValues"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
         },
+        "table": {
+          "__rl": true,
+          "value": "n8n_workflow_backups",
+          "mode": "list",
+          "cachedResultName": "n8n_workflow_backups"
+        },
+        "returnAll": true,
         "options": {}
       },
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.2,
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -880,
+        480
+      ],
+      "id": "a75b3f35-52fd-43a8-ab66-8496cd63407e",
+      "name": "Get n8n_workflow_backups",
+      "credentials": {
+        "postgres": {
+          "id": "g17YnMWQWdvNOGyX",
+          "name": "Postgres - postgres_fullaccess"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "versionid",
+              "field2": "version_id"
+            }
+          ]
+        },
+        "joinMode": "keepNonMatches",
+        "outputDataFrom": "input1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
       "position": [
         -608,
-        352
+        368
       ],
-      "id": "e6858b89-cd58-4cc9-b37f-febadaacfbd6",
-      "name": "removeEmpty"
+      "id": "9ce673ea-c710-4386-ad80-19aa3a68c520",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1136,
+        368
+      ],
+      "id": "c2cb3c38-328e-4b30-b98f-be0014fc8018",
+      "name": "Trigger Payload"
     }
   ],
   "connections": {
-    "Midnight": {
-      "main": [
-        [
-          {
-            "node": "createTable-n8n_workflow_backups",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "checkExisting",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "createTable-n8n_workflow_backups": {
-      "main": [
-        []
-      ]
-    },
-    "checkExisting": {
-      "main": [
-        [
-          {
-            "node": "getWorkflowData",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "getWorkflowData": {
       "main": [
         []
       ]
     },
     "currentItem": {
       "main": [
-        [
-          {
-            "node": "Done",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        [],
         [
           {
             "node": "addFileOutputValues",
@@ -649,88 +431,6 @@
         ]
       ]
     },
-    "addFileOutputValues": {
-      "main": [
-        [
-          {
-            "node": "getSHA",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get All Workflow Versions": {
-      "main": [
-        [
-          {
-            "node": "Merge Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Backed Up Versions": {
-      "main": [
-        [
-          {
-            "node": "Merge Data",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge Data": {
-      "main": [
-        [
-          {
-            "node": "Filter Workflows Needing Backup",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Filter Workflows Needing Backup": {
-      "main": [
-        [
-          {
-            "node": "Get Workflow Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Midnight1": {
-      "main": [
-        [
-          {
-            "node": "Get All Workflow Versions",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Get Backed Up Versions",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Midnight3": {
-      "main": [
-        [
-          {
-            "node": "Get from n8n_workflow_history_archive",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Insert Into n8n_workflow_backups": {
       "main": [
         [
@@ -746,18 +446,56 @@
       "main": [
         [
           {
-            "node": "removeEmpty",
+            "node": "Merge",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "removeEmpty": {
+    "addFileOutputValues": {
+      "main": [
+        [
+          {
+            "node": "getSHA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get n8n_workflow_backups": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
       "main": [
         [
           {
             "node": "currentItem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Payload": {
+      "main": [
+        [
+          {
+            "node": "Get from n8n_workflow_history_archive",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get n8n_workflow_backups",
             "type": "main",
             "index": 0
           }
