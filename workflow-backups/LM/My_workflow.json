@@ -1,1 +1,68 @@
-{"versionid":"413eca3d-f713-41cf-b839-cdb1302e82b5","workflowid":"ZFP8npmz52YUXMG8","createdat":"2025-11-04T23:41:45.798Z","updatedat":"2025-11-04T23:41:45.798Z","nodes":[{"parameters":{"path":"439073af-6715-4cbb-ab2d-48e7f9518aa2","authentication":"headerAuth","responseMode":"responseNode","options":{}},"type":"n8n-nodes-base.webhook","typeVersion":2.1,"position":[0,0],"id":"538bcc27-dd97-44cb-bb9e-15619c6b2eb7","name":"Webhook","webhookId":"439073af-6715-4cbb-ab2d-48e7f9518aa2","credentials":{"httpHeaderAuth":{"id":"57meP85zPL4JYI7T","name":"Header Auth account"}}},{"parameters":{"resource":"user","operation":"getAll"},"type":"n8n-nodes-base.slack","typeVersion":2.3,"position":[432,0],"id":"0e0570d0-4cd2-4fea-8e3c-ae95cc26624e","name":"getUsers","webhookId":"7f324103-1b1b-4f90-b8a0-d8d9f8be86c0","executeOnce":true,"credentials":{"slackApi":{"id":"qPNRJ2gYNvlnyMvR","name":"Slack - Nathan"}}},{"parameters":{"resource":"channel","operation":"getAll","filters":{}},"type":"n8n-nodes-base.slack","typeVersion":2.3,"position":[224,0],"id":"52e2bb32-2362-4dc1-b00e-a0505c452de3","name":"getChannels","webhookId":"77e3f345-0d46-4ac2-9af2-f9ba35d66d6f","credentials":{"slackApi":{"id":"qPNRJ2gYNvlnyMvR","name":"Slack - Nathan"}}},{"parameters":{"jsCode":"// Get all users\nconst users = $input.all();\n\n// Filter to only active, non-bot, non-guest users\nconst filteredUsers = users.filter(item => {\n  const user = item.json;\n  \n  return (\n    !user.deleted &&           // Not deleted\n    !user.is_bot &&            // Not a bot\n    !user.is_restricted &&     // Not a guest\n    user.id !== 'USLACKBOT'    // Not Slackbot itself\n  );\n});\n\n// Remove duplicates by ID using a Map\nconst uniqueUsersMap = new Map();\n\nfilteredUsers.forEach(item => {\n  const userId = item.json.id;\n  // Only add if we haven't seen this ID before\n  if (!uniqueUsersMap.has(userId)) {\n    uniqueUsersMap.set(userId, item);\n  }\n});\n\n// Convert Map back to array\nconst uniqueUsers = Array.from(uniqueUsersMap.values());\n\nreturn uniqueUsers;"},"type":"n8n-nodes-base.code","typeVersion":2,"position":[640,0],"id":"b60ecf99-7f75-4ee8-85e5-e99d3ec5bc12","name":"realUsers"},{"parameters":{"jsCode":"// Get channels and users from previous nodes\nconst channels = $('getChannels').all();\nconst users = $('realUsers').all();\n// Get the user's message from the webhook\nconst userMessage = $('Webhook').first().json.body.text;\n\n// Format channels for AI context - only include relevant fields\nconst formattedChannels = channels.map(item => ({\n  id: item.json.id,\n  name: item.json.name,\n  is_private: item.json.is_private || false\n}));\n\n// Format users for AI context - only include relevant fields\nconst formattedUsers = users.map(item => ({\n  id: item.json.id,\n  name: item.json.real_name || item.json.name,\n  display_name: item.json.profile?.display_name || ''\n}));\n\n// Return single item with all context for the AI\nreturn [{\n  json: {\n    channels: formattedChannels,\n    users: formattedUsers,\n    userMessage: userMessage,\n    timestamp: new Date().toISOString()\n  }\n}];"},"type":"n8n-nodes-base.code","typeVersion":2,"position":[848,0],"id":"2df425c6-759c-4980-9a23-206683cd5906","name":"agentSetup"},{"parameters":{"promptType":"define","text":"=You are a Slack message router for voice commands.\n\nAVAILABLE CHANNELS:\n{{JSON.stringify($json.channels, null, 2)}}\n\nAVAILABLE USERS:\n{{JSON.stringify($json.users, null, 2)}}\n\nUser command: \"{{$json.userMessage}}\"\n\nCRITICAL INSTRUCTIONS:\n1. Find the recipient by matching the name. The user must be matched to the list of AVAILABLE USERS\n2. Use the EXACT ID from the lists above - do NOT make up or modify IDs\n3. Extract the message content\n4. Return ONLY the JSON object below (no markdown, no explanation)\n\nIf the recipient name matches a user, find that user in the AVAILABLE USERS list and use their exact \"id\" field.\nIf the recipient name matches a channel, find that channel in the AVAILABLE CHANNELS list and use their exact \"id\" field.\nIf no match is found, set type to \"error\".\n\nReturn this exact structure with the ACTUAL IDs from the lists:\n{\"type\":\"user\",\"recipientId\":\"EXACT_ID_FROM_LIST\",\"recipientName\":\"matched name\",\"message\":\"extracted message\"}\n\nDo NOT invent or shorten IDs. Use the complete ID exactly as shown in the available lists.","options":{}},"type":"@n8n/n8n-nodes-langchain.agent","typeVersion":2.2,"position":[1056,0],"id":"32c1f8c0-33ca-4e13-9359-5f290f087449","name":"AI Agent"},{"parameters":{"model":{"__rl":true,"value":"gpt-4o-mini","mode":"list","cachedResultName":"gpt-4o-mini"},"options":{}},"type":"@n8n/n8n-nodes-langchain.lmChatOpenAi","typeVersion":1.2,"position":[992,240],"id":"4674785a-b1bc-46fc-9198-0d528a1ffd15","name":"OpenAI Chat Model","credentials":{"openAiApi":{"id":"ZIhKmLFbnV3eHkVn","name":"OpenAi SDL(personal)"}}},{"parameters":{"jsCode":"// Get the AI output string\nlet outputString = $json.output;\n\n// Parse the JSON string\nlet parsed = JSON.parse(outputString);\n\n// Return the parsed object\nreturn [{\n  json: parsed\n}];"},"type":"n8n-nodes-base.code","typeVersion":2,"position":[1392,0],"id":"6c72f29a-d8b5-44da-a430-5ca6057112f1","name":"postProcess"},{"parameters":{"conditions":{"options":{"caseSensitive":true,"leftValue":"","typeValidation":"strict","version":2},"conditions":[{"id":"f9dd7993-be12-44d3-8070-551e9196fb06","leftValue":"={{ $json.type }}","rightValue":"user","operator":{"type":"string","operation":"equals","name":"filter.operator.equals"}}],"combinator":"and"},"options":{}},"type":"n8n-nodes-base.if","typeVersion":2.2,"position":[1600,0],"id":"e11909a4-1750-4193-b40c-981633cadc3c","name":"ifUser"},{"parameters":{"select":"user","user":{"__rl":true,"value":"={{ $json.recipientId }}","mode":"id"},"text":"={{ $('postProcess').item.json.message }}","otherOptions":{"sendAsUser":"U07ESV87493"}},"type":"n8n-nodes-base.slack","typeVersion":2.3,"position":[1808,-96],"id":"d2958f9b-4d16-4530-9507-bcec7a212b01","name":"Send a message","webhookId":"97963a3a-4ef6-432c-bb69-f758a5a7fbb1","credentials":{"slackApi":{"id":"qPNRJ2gYNvlnyMvR","name":"Slack - Nathan"}}}],"connections":{"Webhook":{"main":[[{"node":"getChannels","type":"main","index":0}]]},"getChannels":{"main":[[{"node":"getUsers","type":"main","index":0}]]},"getUsers":{"main":[[{"node":"realUsers","type":"main","index":0}]]},"realUsers":{"main":[[{"node":"agentSetup","type":"main","index":0}]]},"agentSetup":{"main":[[{"node":"AI Agent","type":"main","index":0}]]},"OpenAI Chat Model":{"ai_languageModel":[[{"node":"AI Agent","type":"ai_languageModel","index":0}]]},"AI Agent":{"main":[[{"node":"postProcess","type":"main","index":0}]]},"postProcess":{"main":[[{"node":"ifUser","type":"main","index":0}]]},"ifUser":{"main":[[{"node":"Send a message","type":"main","index":0}]]}},"workflow_name":"My workflow"}
+{
+  "versionid": "a2582c73-ae1e-4dde-b7d5-6d0b68a28ed6",
+  "workflowid": "ZFP8npmz52YUXMG8",
+  "createdat": "2025-11-04T23:06:20.703Z",
+  "updatedat": "2025-11-04T23:06:20.703Z",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "439073af-6715-4cbb-ab2d-48e7f9518aa2",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "538bcc27-dd97-44cb-bb9e-15619c6b2eb7",
+      "name": "Webhook",
+      "webhookId": "439073af-6715-4cbb-ab2d-48e7f9518aa2",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "57meP85zPL4JYI7T",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "channel",
+        "operation": "getAll",
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "52e2bb32-2362-4dc1-b00e-a0505c452de3",
+      "name": "Get many channels",
+      "webhookId": "77e3f345-0d46-4ac2-9af2-f9ba35d66d6f",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "60tzBijdxiuF9il9",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get many channels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "workflow_name": "My workflow"
+}
