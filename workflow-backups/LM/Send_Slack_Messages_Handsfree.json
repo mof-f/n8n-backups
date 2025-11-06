@@ -1,8 +1,8 @@
 {
-  "versionid": "3cc1aebe-3828-4bed-adb9-f68190593ebb",
+  "versionid": "6c22da55-22c0-4499-a2f3-5683430ca7ef",
   "workflowid": "ZFP8npmz52YUXMG8",
-  "createdat": "2025-11-06T00:52:53.061Z",
-  "updatedat": "2025-11-06T00:52:53.061Z",
+  "createdat": "2025-11-06T00:50:55.788Z",
+  "updatedat": "2025-11-06T00:50:55.788Z",
   "nodes": [
     {
       "parameters": {
@@ -189,14 +189,12 @@
         "select": "user",
         "user": {
           "__rl": true,
-          "value": "U07ESV87493",
-          "mode": "list",
-          "cachedResultName": "luke"
+          "value": "={{ $json.recipientId }}",
+          "mode": "id"
         },
         "text": "={{ $('postProcess').item.json.message }}",
         "otherOptions": {
-          "includeLinkToWorkflow": false,
-          "sendAsUser": "luke"
+          "sendAsUser": "U07ESV87493"
         }
       },
       "type": "n8n-nodes-base.slack",
