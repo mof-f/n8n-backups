@@ -1,8 +1,8 @@
 {
-  "versionid": "a099a24e-825e-4eb9-8b70-9704f811fab5",
+  "versionid": "b593bc75-bfb3-404d-80d7-1c857a7b2741",
   "workflowid": "ZFP8npmz52YUXMG8",
-  "createdat": "2025-11-06T05:04:22.659Z",
-  "updatedat": "2025-11-06T05:04:22.659Z",
+  "createdat": "2025-11-06T05:05:48.118Z",
+  "updatedat": "2025-11-06T05:05:48.118Z",
   "nodes": [
     {
       "parameters": {
@@ -189,9 +189,8 @@
         "select": "user",
         "user": {
           "__rl": true,
-          "value": "U07ESV87493",
-          "mode": "list",
-          "cachedResultName": "luke"
+          "value": "={{ $json.recipientId }}",
+          "mode": "id"
         },
         "text": "={{ $('postProcess').item.json.message }}",
         "otherOptions": {
