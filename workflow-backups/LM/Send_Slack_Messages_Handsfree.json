@@ -1,8 +1,8 @@
 {
-  "versionid": "9771fcb4-009c-4468-afa9-2f6ac21cd862",
+  "versionid": "a099a24e-825e-4eb9-8b70-9704f811fab5",
   "workflowid": "ZFP8npmz52YUXMG8",
-  "createdat": "2025-11-06T05:06:30.285Z",
-  "updatedat": "2025-11-06T05:06:30.285Z",
+  "createdat": "2025-11-06T05:04:22.659Z",
+  "updatedat": "2025-11-06T05:04:22.659Z",
   "nodes": [
     {
       "parameters": {
@@ -14,8 +14,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        848,
-        -192
+        0,
+        0
       ],
       "id": "538bcc27-dd97-44cb-bb9e-15619c6b2eb7",
       "name": "Webhook",
@@ -35,8 +35,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        1280,
-        -192
+        432,
+        0
       ],
       "id": "0e0570d0-4cd2-4fea-8e3c-ae95cc26624e",
       "name": "getUsers",
@@ -58,8 +58,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        1072,
-        -192
+        224,
+        0
       ],
       "id": "52e2bb32-2362-4dc1-b00e-a0505c452de3",
       "name": "getChannels",
@@ -78,8 +78,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1488,
-        -192
+        640,
+        0
       ],
       "id": "b60ecf99-7f75-4ee8-85e5-e99d3ec5bc12",
       "name": "realUsers"
@@ -189,8 +189,9 @@
         "select": "user",
         "user": {
           "__rl": true,
-          "value": "={{ $json.recipientId }}",
-          "mode": "id"
+          "value": "U07ESV87493",
+          "mode": "list",
+          "cachedResultName": "luke"
         },
         "text": "={{ $('postProcess').item.json.message }}",
         "otherOptions": {
@@ -243,38 +244,6 @@
           "name": "Slack - Nathan - User OAuth Token"
         }
       }
-    },
-    {
-      "parameters": {
-        "content": "## Version Control\n\n2025-09-04 12:42 - initial creation, split from main to run wait-limited concurrent flows\n2025-09-04 12:49 - converted workflow variables into an object that I can pass to sub workflows",
-        "height": 480,
-        "width": 844,
-        "color": 4
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -64,
-        -144
-      ],
-      "id": "3cd04130-21d8-4eb6-87d4-5236d68f9d6a",
-      "name": "Sticky Note3"
-    },
-    {
-      "parameters": {
-        "content": "# 001.0 - Trigger Workflow",
-        "height": 80,
-        "width": 836,
-        "color": 3
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -64,
-        -240
-      ],
-      "id": "81cc2795-bef2-4651-8b8c-173dddd624af",
-      "name": "Sticky Note"
     }
   ],
   "connections": {
