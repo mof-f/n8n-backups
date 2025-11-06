@@ -1,8 +1,8 @@
 {
-  "versionid": "6c22da55-22c0-4499-a2f3-5683430ca7ef",
+  "versionid": "84264858-dcc9-473a-9288-9fb85f09b96b",
   "workflowid": "ZFP8npmz52YUXMG8",
-  "createdat": "2025-11-06T00:50:55.788Z",
-  "updatedat": "2025-11-06T00:50:55.788Z",
+  "createdat": "2025-11-06T05:06:22.491Z",
+  "updatedat": "2025-11-06T05:06:22.491Z",
   "nodes": [
     {
       "parameters": {
@@ -14,8 +14,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        848,
+        -192
       ],
       "id": "538bcc27-dd97-44cb-bb9e-15619c6b2eb7",
       "name": "Webhook",
@@ -35,8 +35,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        432,
-        0
+        1280,
+        -192
       ],
       "id": "0e0570d0-4cd2-4fea-8e3c-ae95cc26624e",
       "name": "getUsers",
@@ -45,7 +45,7 @@
       "credentials": {
         "slackApi": {
           "id": "qPNRJ2gYNvlnyMvR",
-          "name": "Slack - Nathan"
+          "name": "Slack - Nathan - User OAuth Token"
         }
       }
     },
@@ -58,8 +58,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        224,
-        0
+        1072,
+        -192
       ],
       "id": "52e2bb32-2362-4dc1-b00e-a0505c452de3",
       "name": "getChannels",
@@ -67,7 +67,7 @@
       "credentials": {
         "slackApi": {
           "id": "qPNRJ2gYNvlnyMvR",
-          "name": "Slack - Nathan"
+          "name": "Slack - Nathan - User OAuth Token"
         }
       }
     },
@@ -78,8 +78,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        640,
-        0
+        1488,
+        -192
       ],
       "id": "b60ecf99-7f75-4ee8-85e5-e99d3ec5bc12",
       "name": "realUsers"
@@ -194,7 +194,8 @@
         },
         "text": "={{ $('postProcess').item.json.message }}",
         "otherOptions": {
-          "sendAsUser": "U07ESV87493"
+          "includeLinkToWorkflow": false,
+          "sendAsUser": "luke"
         }
       },
       "type": "n8n-nodes-base.slack",
@@ -209,7 +210,7 @@
       "credentials": {
         "slackApi": {
           "id": "qPNRJ2gYNvlnyMvR",
-          "name": "Slack - Nathan"
+          "name": "Slack - Nathan - User OAuth Token"
         }
       }
     },
@@ -223,7 +224,8 @@
         },
         "text": "={{ $('postProcess').item.json.message }}",
         "otherOptions": {
-          "sendAsUser": "U07ESV87493"
+          "includeLinkToWorkflow": false,
+          "sendAsUser": "luke"
         }
       },
       "type": "n8n-nodes-base.slack",
@@ -238,9 +240,41 @@
       "credentials": {
         "slackApi": {
           "id": "qPNRJ2gYNvlnyMvR",
-          "name": "Slack - Nathan"
+          "name": "Slack - Nathan - User OAuth Token"
         }
       }
+    },
+    {
+      "parameters": {
+        "content": "## Version Control\n\n2025-09-04 12:42 - initial creation, split from main to run wait-limited concurrent flows\n2025-09-04 12:49 - converted workflow variables into an object that I can pass to sub workflows",
+        "height": 480,
+        "width": 844,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -144
+      ],
+      "id": "3cd04130-21d8-4eb6-87d4-5236d68f9d6a",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "# 001.0 - Trigger Workflow",
+        "height": 80,
+        "width": 836,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -240
+      ],
+      "id": "81cc2795-bef2-4651-8b8c-173dddd624af",
+      "name": "Sticky Note"
     }
   ],
   "connections": {
