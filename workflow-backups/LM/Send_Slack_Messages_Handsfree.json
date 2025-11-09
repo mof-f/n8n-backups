@@ -1,8 +1,8 @@
 {
-  "versionid": "e1a46126-ba8e-467f-bf2c-29f2b89063e0",
+  "versionid": "4aab944d-5f32-467f-8c29-cf36e3231384",
   "workflowid": "ZFP8npmz52YUXMG8",
-  "createdat": "2025-11-08T23:50:29.756Z",
-  "updatedat": "2025-11-08T23:50:29.756Z",
+  "createdat": "2025-11-08T23:35:38.197Z",
+  "updatedat": "2025-11-08T23:35:38.197Z",
   "nodes": [
     {
       "parameters": {
@@ -101,7 +101,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You are a Slack message router for voice commands.\n\nAVAILABLE CHANNELS:\n{{JSON.stringify($json.channels, null, 2)}}\n\nAVAILABLE USERS:\n{{JSON.stringify($json.users, null, 2)}}\n\nUser command: \"{{$json.userMessage}}\"\n\nCRITICAL INSTRUCTIONS:\n1. Find the recipient by matching the name against AVAILABLE USERS or AVAILABLE CHANNELS\n   - Match case-insensitively\n   - Check user fields: name, real_name, display_name, first_name\n   - Check channel fields: name\n2. Use the EXACT ID from the lists above - do NOT make up or modify IDs\n3. Extract and normalize the message content:\n   - Convert third-person references to second-person (e.g., \"tell him\" → \"you\")\n   - Adjust pronouns appropriately (e.g., \"his\" → \"your\", \"he's\" → \"you're\")\n   - Keep the core message meaning intact\n4. Return ONLY the JSON object below (no markdown, no explanation)\n\nIf the recipient name matches a user, find that user in AVAILABLE USERS and use their exact \"id\" field.\nIf the recipient name matches a channel, find that channel in AVAILABLE CHANNELS and use their exact \"id\" field.\nIf no match is found, set type to \"error\" and include an error message.\n\nEXAMPLES:\n- \"message luke telling him he's a good bloke\" → message: \"you're a good bloke\"\n- \"tell sarah her presentation was great\" → message: \"your presentation was great\"\n- \"ask john if he can help\" → message: \"can you help?\"\n- \"post in general that the server is down\" → message: \"the server is down\"\n\nReturn this exact structure with the ACTUAL IDs from the lists:\n{\"type\":\"user\",\"recipientId\":\"EXACT_ID_FROM_LIST\",\"recipientName\":\"matched name\",\"message\":\"normalized message\"}\n\nOR if no match found:\n{\"type\":\"error\",\"message\":\"Could not find user or channel matching '[name]'\"}\n\nDo NOT invent or shorten IDs. Use the complete ID exactly as shown in the available lists.",
+        "text": "=You are a Slack message router for voice commands.\n\nAVAILABLE CHANNELS:\n{{JSON.stringify($json.channels, null, 2)}}\n\nAVAILABLE USERS:\n{{JSON.stringify($json.users, null, 2)}}\n\nUser command: \"{{$json.userMessage}}\"\n\nCRITICAL INSTRUCTIONS:\n1. Find the recipient by matching the name. The user must be matched to the list of AVAILABLE USERS\n2. Use the EXACT ID from the lists above - do NOT make up or modify IDs\n3. Extract the message content\n4. Return ONLY the JSON object below (no markdown, no explanation)\n\nIf the recipient name matches a user, find that user in the AVAILABLE USERS list and use their exact \"id\" field.\nIf the recipient name matches a channel, find that channel in the AVAILABLE CHANNELS list and use their exact \"id\" field.\nIf no match is found, set type to \"error\".\n\nReturn this exact structure with the ACTUAL IDs from the lists:\n{\"type\":\"user\",\"recipientId\":\"EXACT_ID_FROM_LIST\",\"recipientName\":\"matched name\",\"message\":\"extracted message\"}\n\nDo NOT invent or shorten IDs. Use the complete ID exactly as shown in the available lists.",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -180,10 +180,40 @@
       "typeVersion": 2.2,
       "position": [
         1600,
-        -448
+        0
       ],
       "id": "e11909a4-1750-4193-b40c-981633cadc3c",
       "name": "ifUser"
+    },
+    {
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "={{ $json.recipientId }}",
+          "mode": "id"
+        },
+        "text": "={{ $('postProcess').item.json.message }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "sendAsUser": "luke"
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1808,
+        -112
+      ],
+      "id": "d2958f9b-4d16-4530-9507-bcec7a212b01",
+      "name": "Send a message",
+      "webhookId": "97963a3a-4ef6-432c-bb69-f758a5a7fbb1",
+      "credentials": {
+        "slackApi": {
+          "id": "qPNRJ2gYNvlnyMvR",
+          "name": "Slack - Nathan - User OAuth Token"
+        }
+      }
     },
     {
       "parameters": {
@@ -202,8 +232,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        1904,
-        256
+        1808,
+        112
       ],
       "id": "8f1a9ee4-2e02-4cf3-b6d0-fc35ffb76898",
       "name": "Post to Channel",
@@ -217,7 +247,7 @@
     },
     {
       "parameters": {
-        "content": "## Version Control\n\n2025-09-04 12:42 - initial creation, split from main to run wait-limited concurrent flows\n2025-09-04 12:49 - converted workflow variables into an object that I can pass to sub workflows\n2025-11-09 10:20 LM - added error handling path, and natural language freedom to the AI",
+        "content": "## Version Control\n\n2025-09-04 12:42 - initial creation, split from main to run wait-limited concurrent flows\n2025-09-04 12:49 - converted workflow variables into an object that I can pass to sub workflows",
         "height": 480,
         "width": 844,
         "color": 4
@@ -256,8 +286,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        2304,
-        192
+        2208,
+        0
       ],
       "id": "af65db35-a98f-4d65-8715-50ee392f4d86",
       "name": "Respond to Webhook"
@@ -267,147 +297,11 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2112,
-        192
+        2016,
+        0
       ],
       "id": "86bf1a1b-7c17-44eb-856d-5fda6a3e801d",
       "name": "."
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.type }}",
-                    "rightValue": "error",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "dc46c528-0c94-400d-a3e5-1984eb13e571"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "error"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "4d442e4f-bf30-4184-9efa-3123b1770f11",
-                    "leftValue": "={{ $json.type }}",
-                    "rightValue": "user",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "user"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "fb8a0f81-45da-4768-ad79-b3bb82d65691",
-                    "leftValue": "={{ $json.type }}",
-                    "rightValue": "channel",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "channel"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.3,
-      "position": [
-        1648,
-        64
-      ],
-      "id": "af059755-2f3e-4795-a29f-ebc1cc849f63",
-      "name": "Switch"
-    },
-    {
-      "parameters": {
-        "select": "user",
-        "user": {
-          "__rl": true,
-          "value": "={{ $json.recipientId }}",
-          "mode": "id"
-        },
-        "text": "={{ $('postProcess').item.json.message }}",
-        "otherOptions": {
-          "includeLinkToWorkflow": false,
-          "sendAsUser": "luke"
-        }
-      },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        1904,
-        80
-      ],
-      "id": "d2958f9b-4d16-4530-9507-bcec7a212b01",
-      "name": "Message User",
-      "webhookId": "97963a3a-4ef6-432c-bb69-f758a5a7fbb1",
-      "credentials": {
-        "slackApi": {
-          "id": "qPNRJ2gYNvlnyMvR",
-          "name": "Slack - Nathan - User OAuth Token"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={\n  \"message\": ❌ \"The AI wasnt able to process this request appropriately\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
-      "position": [
-        1904,
-        -128
-      ],
-      "id": "10288b72-22c8-4676-8f7f-e4e03efacb55",
-      "name": "Respond to Webhook - AI Error"
     }
   ],
   "connections": {
@@ -492,7 +386,7 @@
       "main": [
         [
           {
-            "node": "Switch",
+            "node": "ifUser",
             "type": "main",
             "index": 0
           }
@@ -501,8 +395,31 @@
     },
     "ifUser": {
       "main": [
-        [],
-        []
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post to Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": ".",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Post to Channel": {
@@ -521,42 +438,6 @@
         [
           {
             "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch": {
-      "main": [
-        [
-          {
-            "node": "Respond to Webhook - AI Error",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Message User",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Post to Channel",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Message User": {
-      "main": [
-        [
-          {
-            "node": ".",
             "type": "main",
             "index": 0
           }
