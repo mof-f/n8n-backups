@@ -1,8 +1,8 @@
 {
-  "versionid": "3fd01697-8241-4f3c-be6c-fb54aa052b95",
+  "versionid": "ab3033a8-a093-4a8c-a3f9-5a2a483d316a",
   "workflowid": "XREHV4y8QuHrrf2i",
-  "createdat": "2025-11-12T09:34:56.658Z",
-  "updatedat": "2025-11-12T09:34:56.658Z",
+  "createdat": "2025-11-12T09:31:48.993Z",
+  "updatedat": "2025-11-12T09:31:48.993Z",
   "nodes": [
     {
       "parameters": {
@@ -69,7 +69,7 @@
     },
     {
       "parameters": {
-        "content": "## Version Control\n2025-11-12 20:02 LM - initial setup ",
+        "content": "## Version Control\n2025-10-19 17:34 LM - initial setup (cloned from personal) and proof of working code\n2025-10-19 18:16 LM - updated for `Ready for Development` status\n2025-10-19 18:16 LM - updated response to use correct task response",
         "height": 480,
         "width": 940,
         "color": 4
@@ -86,7 +86,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"message\": \"✅ {{ $('Personal Task Agent').item.json.message.content.Item }} added to Shopping\"\n}",
+        "responseBody": "={\n  \"message\": \"✅ {{ $('Personal Task Agent').item.json.message.content.Item }} added to Shopping.\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
@@ -100,7 +100,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ========== CONFIG ==========\nconst AUTO_SET_CREATED_DATE = true; // Auto-set CreatedDate to today\n// ============================\n\nconst taskData = $input.first().json.message.content; \nconst propertySchema = $('parseProps').first().json.propertySchema;\nconst databaseId = $('GetDatabaseProps').first().json.id;\n\nfunction formatProperty(value, type) {\n  // Skip null, undefined, or empty string\n  if (value === null || value === undefined || value === '') {\n    return null;\n  }\n  \n  switch(type) {\n    case 'title':\n      return { \n        title: [{ text: { content: String(value) } }] \n      };\n    \n    case 'rich_text':\n      return { \n        rich_text: [{ text: { content: String(value) } }] \n      };\n    \n    case 'select':\n      return { \n        select: { name: String(value) } \n      };\n    \n    case 'multi_select':\n      const values = Array.isArray(value) ? value : [value];\n      const filtered = values.filter(v => v !== null && v !== undefined && v !== '');\n      return filtered.length > 0 ? {\n        multi_select: filtered.map(v => ({ name: String(v) }))\n      } : null;\n    \n    case 'status':\n      return { \n        status: { name: String(value) } \n      };\n    \n    case 'date':\n      const dateStr = value.includes('T') ? value.split('T')[0] : value;\n      return { \n        date: { start: dateStr } \n      };\n    \n    case 'checkbox':\n      return { \n        checkbox: Boolean(value) \n      };\n    \n    case 'number':\n      return { \n        number: Number(value) \n      };\n    \n    case 'url':\n      return {\n        url: String(value)\n      };\n    \n    case 'people':\n      // People property - expects array of user objects\n      // AI will set this as null, but keeping handler for future use\n      if (Array.isArray(value)) {\n        return {\n          people: value.map(person => ({ id: person.id || person }))\n        };\n      }\n      return null;\n    \n    default:\n      return null;\n  }\n}\n\nconst properties = {};\n\n// Build properties dynamically from schema and AI output\nfor (const [propName, propConfig] of Object.entries(propertySchema)) {\n  const value = taskData[propName];\n  \n  // Only add property if it has a value (skip nulls)\n  if (value !== undefined && value !== null && value !== '') {\n    const formatted = formatProperty(value, propConfig.type);\n    if (formatted !== null) {\n      properties[propName] = formatted;\n    }\n  }\n  \n  // Special handling for checkbox - include false values\n  if (propConfig.type === 'checkbox' && value !== undefined && value !== null) {\n    properties[propName] = formatProperty(value, 'checkbox');\n  }\n}\n\n// ========== AUTO-SET CREATED DATE ==========\n// if (AUTO_SET_CREATED_DATE) {\n//   // Set CreatedDate to today in Adelaide timezone\n//   const dates = $('parseProps').first().json.dates;\n//   properties['CreatedDate'] = { \n//     date: { start: dates.today } \n//   };\n// }\n// ===========================================\n\nreturn [{\n  json: {\n    parent: { \n      database_id: databaseId \n    },\n    properties: properties\n  }\n}];"
+        "jsCode": "// ========== CONFIG ==========\nconst AUTO_SET_CREATED_DATE = true; // Auto-set CreatedDate to today\n// ============================\n\nconst taskData = $input.first().json.message.content; \nconst propertySchema = $('parseProps').first().json.propertySchema;\nconst databaseId = $('GetDatabaseProps').first().json.id;\n\nfunction formatProperty(value, type) {\n  // Skip null, undefined, or empty string\n  if (value === null || value === undefined || value === '') {\n    return null;\n  }\n  \n  switch(type) {\n    case 'title':\n      return { \n        title: [{ text: { content: String(value) } }] \n      };\n    \n    case 'rich_text':\n      return { \n        rich_text: [{ text: { content: String(value) } }] \n      };\n    \n    case 'select':\n      return { \n        select: { name: String(value) } \n      };\n    \n    case 'multi_select':\n      const values = Array.isArray(value) ? value : [value];\n      const filtered = values.filter(v => v !== null && v !== undefined && v !== '');\n      return filtered.length > 0 ? {\n        multi_select: filtered.map(v => ({ name: String(v) }))\n      } : null;\n    \n    case 'status':\n      return { \n        status: { name: String(value) } \n      };\n    \n    case 'date':\n      const dateStr = value.includes('T') ? value.split('T')[0] : value;\n      return { \n        date: { start: dateStr } \n      };\n    \n    case 'checkbox':\n      return { \n        checkbox: Boolean(value) \n      };\n    \n    case 'number':\n      return { \n        number: Number(value) \n      };\n    \n    case 'url':\n      return {\n        url: String(value)\n      };\n    \n    case 'people':\n      // People property - expects array of user objects\n      // AI will set this as null, but keeping handler for future use\n      if (Array.isArray(value)) {\n        return {\n          people: value.map(person => ({ id: person.id || person }))\n        };\n      }\n      return null;\n    \n    default:\n      return null;\n  }\n}\n\nconst properties = {};\n\n// Build properties dynamically from schema and AI output\nfor (const [propName, propConfig] of Object.entries(propertySchema)) {\n  const value = taskData[propName];\n  \n  // Only add property if it has a value (skip nulls)\n  if (value !== undefined && value !== null && value !== '') {\n    const formatted = formatProperty(value, propConfig.type);\n    if (formatted !== null) {\n      properties[propName] = formatted;\n    }\n  }\n  \n  // Special handling for checkbox - include false values\n  if (propConfig.type === 'checkbox' && value !== undefined && value !== null) {\n    properties[propName] = formatProperty(value, 'checkbox');\n  }\n}\n\n// ========== AUTO-SET CREATED DATE ==========\nif (AUTO_SET_CREATED_DATE) {\n  // Set CreatedDate to today in Adelaide timezone\n  const dates = $('parseProps').first().json.dates;\n  properties['CreatedDate'] = { \n    date: { start: dates.today } \n  };\n}\n// ===========================================\n\nreturn [{\n  json: {\n    parent: { \n      database_id: databaseId \n    },\n    properties: properties\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
