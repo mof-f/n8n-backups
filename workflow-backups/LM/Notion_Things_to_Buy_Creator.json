@@ -1,8 +1,8 @@
 {
-  "versionid": "ab3033a8-a093-4a8c-a3f9-5a2a483d316a",
+  "versionid": "b8c6ca35-91f5-4ee5-b5a1-03670de36130",
   "workflowid": "XREHV4y8QuHrrf2i",
-  "createdat": "2025-11-12T09:31:48.993Z",
-  "updatedat": "2025-11-12T09:31:48.993Z",
+  "createdat": "2025-11-12T09:15:25.048Z",
+  "updatedat": "2025-11-12T09:15:25.048Z",
   "nodes": [
     {
       "parameters": {
@@ -55,7 +55,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        656,
+        672,
         -144
       ],
       "id": "06910f99-e59b-46b3-b67f-4bd24d209850",
@@ -86,13 +86,13 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"message\": \"✅ {{ $('Personal Task Agent').item.json.message.content.Item }} added to Shopping.\n}",
+        "responseBody": "={\n  \"message\": \"✅ Task added to Inbox: {{ $('Personal Task Agent').item.json.message.content[\"Task name\"] }}\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        848,
+        864,
         -144
       ],
       "id": "bb4dd8c9-187d-4e78-aa07-78989bb9d293",
@@ -105,7 +105,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        464,
+        480,
         -144
       ],
       "id": "9ca28fc5-d2fb-41c9-aaef-85a7cd1aa11d",
@@ -122,7 +122,7 @@
         "messages": {
           "values": [
             {
-              "content": "=You are a shopping list parser for a personal inventory system. Parse the user's natural language input and extract item properties intelligently.\n\nVoice input: {{$json.userInput}}\n\nDatabase schema with available properties:\n{{JSON.stringify($json.propertySchema, null, 2)}}\n\nCurrent date references (Adelaide timezone):\n- Today: {{$json.dates.today}}\n- Tomorrow: {{$json.dates.tomorrow}}\n- This Friday: {{$json.dates.thisFriday}}\n- This weekend: {{$json.dates.thisWeekend}}\n- Next week: {{$json.dates.nextWeek}}\n\nCRITICAL: SCAN THE ENTIRE INPUT FOR THESE KEYWORDS REGARDLESS OF POSITION!\n\nSHOP / SOURCE DETECTION (always check the full input):\n- Contains \"Bunnings\", \"bunnings\", \"hardware store\", \"hardware\" → \"Hardware\"\n- Contains \"JB Hi-Fi\", \"JB\", \"electronics store\", \"tech store\" → \"Tech\"\n- Contains \"Coles\", \"coles\", \"Woolworths\", \"woolies\", \"woolworths\", \"supermarket\", \"groceries\" → \"Supermarket\"\n- Contains \"chemist\", \"pharmacy\", \"Chemist Warehouse\" → \"Pharmacy\"\n- Contains \"Amazon\", \"amazon\" → \"Amazon\"\n- Contains \"eBay\", \"ebay\" → \"eBay\"\n- Contains \"specialty store\", \"specialty shop\" → \"Specialty\"\n- If no shop mentioned but contains \"online order\", \"online shopping\" → Check category, default to \"Amazon\"\n- If no shop detected at all → Use \"Other\"\n\nPRIORITY AND NEEDED BY DATE RULES (check in this order):\n\n1. URGENT PURCHASES - Need immediately:\n   Keywords: \"today\", \"now\", \"urgent\", \"ASAP\", \"ran out\", \"need immediately\", \"critical\"\n   Sets:\n   * Priority = \"High\"\n   * Needed by = {{$json.dates.today}}\n   * In cart? = true\n\n2. THIS WEEK PURCHASES - Scheduled soon:\n   Keywords: \"this week\", \"by Friday\", \"by weekend\", \"before weekend\", \"by end of week\", \"soon\"\n   Sets:\n   * Priority = \"Medium\"\n   * Needed by = {{$json.dates.thisFriday}} (or {{$json.dates.thisWeekend}} if \"weekend\" mentioned)\n   * In cart? = false\n\n3. CASUAL PURCHASES - No urgency (default):\n   Keywords: \"next time\", \"when I order\", \"eventually\", \"sometime\", \"not urgent\", OR no timing keywords\n   Sets:\n   * Priority = \"Low\"\n   * Needed by = null\n   * In cart? = false\n\nCATEGORY DETECTION (can be multiple):\n- Cleaning supplies, batteries, light bulbs, paper towels → \"Household\", \"Consumables\"\n- Screwdrivers, hammer, drill bits, nails, screws, tools → \"Tools\"\n- Food items, snacks, beverages, produce → \"Groceries\", \"Consumables\"\n- Phone accessories, cables, computer parts → \"Electronics\"\n- Pens, paper, notebooks, printer ink → \"Office\", \"Consumables\"\n- Socks, shirts, jeans, clothes → \"Clothing\"\n- Birthday items, presents → \"Gifts\"\n- Garden supplies, fertiliser, plants, seeds, soil → \"Household\"\n\nProperty type rules:\n- title: Use for \"Item\" - the main item name (e.g., \"Citrus fertiliser\", \"Socks\", \"AA batteries\")\n- rich_text: Use for \"Notes\" for brand preferences, quantity, timing context, or other details mentioned\n- select: Use exact option from available choices for \"Priority\" and \"Shop / Source\"\n- multi_select: Can use multiple options for \"Category\" if item fits multiple categories\n- date: Use YYYY-MM-DD format for \"Needed by\":\n  * \"today\" or \"now\" → {{$json.dates.today}}\n  * \"this week\" or \"by Friday\" → {{$json.dates.thisFriday}}\n  * \"weekend\" or \"by weekend\" → {{$json.dates.thisWeekend}}\n  * \"tomorrow\" → {{$json.dates.tomorrow}}\n  * \"next week\" → {{$json.dates.nextWeek}}\n  * No mention or \"next time\" → null\n- checkbox: \"In cart?\" = true only if urgency is high or explicitly mentioned\n- checkbox: \"Bought\" = false (always, since this is a new item)\n- url: \"Link\" = null (unless user provides a specific link)\n- number: \"Est. price\" = null (unless user mentions approximate price)\n\nIMPORTANT: The shop name can appear ANYWHERE in the input - at the beginning, middle, or end. Always scan the complete sentence for shop keywords.\n\nOUTPUT ONLY VALID JSON matching the Notion property types. Do not include explanations.",
+              "content": "=You are a work task parser for a developer/team workflow. Parse the user's natural language input and extract task properties intelligently.\n\nVoice input: {{$json.userInput}}\n\nDatabase schema with available properties:\n{{JSON.stringify($json.propertySchema, null, 2)}}\n\nCurrent date references (Adelaide timezone):\n- Today: {{$json.dates.today}}\n- Tomorrow: {{$json.dates.tomorrow}}\n- This Friday: {{$json.dates.thisFriday}}\n- This weekend: {{$json.dates.thisWeekend}}\n- Next week: {{$json.dates.nextWeek}}\n\nCRITICAL: DETECT URGENCY KEYWORDS FIRST!\n\nSTATUS AND DUE DATE RULES (check in this order):\n\n1. TODAY TASKS - Active work right now:\n   Keywords: \"today\", \"now\", \"urgent\", \"ASAP\", \"quick\", \"blocking\", \"critical\", \"immediately\"\n   Sets:\n   * Status = \"In Progress\"\n   * Due = {{$json.dates.today}}\n   * Priority = \"High\"\n\n2. THIS WEEK TASKS - Scheduled for this week:\n   Keywords: \"this week\", \"by Friday\", \"by end of week\", \"soon\", \"next few days\"\n   Sets:\n   * Status = \"Ready for Development\"\n   * Due = {{$json.dates.thisFriday}}\n   * Priority = \"Medium\"\n\n3. BACKLOG TASKS - No deadline (default):\n   NO urgency keywords mentioned\n   Sets:\n   * Status = \"Backlog\"\n   * Due = null\n   * Priority = \"Medium\"\n\nTASK TYPE DETECTION:\n- If mentions \"bug\", \"fix\", \"issue\", \"ticket\", \"support\", \"customer\", \"client problem\":\n  * Tags = [\"Support Ticket\"]\n  * Priority = \"High\" (unless specified otherwise)\n- Otherwise:\n  * Tags = [\"Work Item\"]\n\nProperty type rules:\n- title: Use for \"Task name\" - the core work item description\n- rich_text: Use for \"Summary\" for additional context. Leave \"Repo\" null.\n- date: Use YYYY-MM-DD format for \"Due\":\n  * \"today\" → {{$json.dates.today}}\n  * \"this week\" or \"by Friday\" → {{$json.dates.thisFriday}}\n  * \"tomorrow\" → {{$json.dates.tomorrow}}\n  * \"this weekend\" → {{$json.dates.thisWeekend}}\n  * \"next week\" → {{$json.dates.nextWeek}}\n  * No mention → null",
               "role": "assistant"
             }
           ]
@@ -133,7 +133,7 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        128,
+        144,
         -144
       ],
       "id": "45457ff8-1739-44a1-90cc-49244912865c",
@@ -150,10 +150,10 @@
         "resource": "database",
         "databaseId": {
           "__rl": true,
-          "value": "b8fe663b-6b5d-46d3-a303-acaf9f0423a4",
+          "value": "e11afe53-9a5e-43b4-9bca-0e635c8d1ebd",
           "mode": "list",
-          "cachedResultName": "Shopping",
-          "cachedResultUrl": "https://www.notion.so/b8fe663b6b5d46d3a303acaf9f0423a4"
+          "cachedResultName": "Tasks",
+          "cachedResultUrl": "https://www.notion.so/e11afe539a5e43b49bca0e635c8d1ebd"
         },
         "simple": false
       },
