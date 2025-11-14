@@ -1,8 +1,8 @@
 {
-  "versionid": "85f4e5a6-04ef-42a7-905f-a5fe554299e2",
+  "versionid": "4470e4ca-2b34-40e5-9c3e-3fdaba12bf9f",
   "workflowid": "5o6wQj4Jnc9WjYjk",
-  "createdat": "2025-09-12T08:08:31.584Z",
-  "updatedat": "2025-11-13T07:49:21.993Z",
+  "createdat": "2025-11-13T07:19:45.158Z",
+  "updatedat": "2025-11-13T07:19:45.158Z",
   "nodes": [
     {
       "parameters": {
@@ -41,7 +41,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -416,
+        -448,
         448
       ],
       "id": "af4733fc-80b5-4d46-acc7-c5692c32ab35",
@@ -49,12 +49,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const source = $('NoOp').first().json.body || $('NoOp').first().json;\n\nconst originLat = source.lat;\nconst originLon = source.lon;\n\nconst litresToBuy = Number(source.litresToBuy ?? 40);\nconst lPer100     = Number(source.lPer100 ?? 8.5);\nconst roadFactor  = Number(source.roadFactor ?? 1.5);\nconst onWay       = Boolean(source.onWay ?? false);\n\nfunction haversine(lat1, lon1, lat2, lon2) {\n  const R = 6371;\n  const dLat = (lat2 - lat1) * Math.PI/180;\n  const dLon = (lon2 - lon1) * Math.PI/180;\n  const a = Math.sin(dLat/2)**2 +\n    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*\n    Math.sin(dLon/2)**2;\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));\n}\nconst round = (n, p=1) => Math.round(n * (10**p)) / (10**p);\n\n// ---- Ingest: support two shapes ----\nlet rawArray = $input.first()?.json?.message?.list;\nif (!Array.isArray(rawArray)) {\n  // Fall back to \"many items\" shape\n  rawArray = $input.all().map(it => it.json);\n}\n\n// ---- Normalize each station to a common shape ----\nfunction normalize(station) {\n  // If already mapped upstream (has .price), keep it\n  const alreadyMapped = station?.price != null && station?.location;\n  if (alreadyMapped) {\n    return {\n      name: station.name,\n      suburb: station.suburb,\n      address: station.address,\n      lat: station.location?.y,\n      lon: station.location?.x,\n      price_cpl: Number(station.price)\n    };\n  }\n  // Otherwise, extract from raw API object\n  return {\n    name: station.name,\n    suburb: station.suburb,\n    address: station.address,\n    lat: station.location?.y,\n    lon: station.location?.x,\n    price_cpl: Number(station?.prices?.U91?.amount)\n  };\n}\n\nconst normalized = rawArray\n  .map(normalize)\n  .filter(s =>\n    Number.isFinite(s?.lat) &&\n    Number.isFinite(s?.lon) &&\n    Number.isFinite(s?.price_cpl)\n  );\n\n// ---- Enrich with travel-aware values ----\n// ---- Enrich with travel-aware values + discounts ----\nconst enriched = normalized.map(s => {\n  const distance_km = haversine(originLat, originLon, s.lat, s.lon);\n  const road_km     = distance_km * roadFactor;\n  const trip_km     = road_km * (onWay ? 1 : 2);\n  const trip_fuel_L = (trip_km * lPer100) / 100;\n  \n  // Apply discounts based on brand\n  let discounted_price = s.price_cpl;\n  const nameLower = (s.name || '').toLowerCase();\n  if (nameLower.includes('caltex')) {\n    discounted_price -= 10; // 10c/L discount at Caltex\n  } else if (nameLower.includes('eg') || nameLower.includes('ampol')) {\n    discounted_price -= 4;  // 4c/L discount at EG Ampol\n  }\n  \n  const trip_cost_$ = (discounted_price / 100) * trip_fuel_L;\n  const effective_cpl = discounted_price + ((trip_cost_$ / litresToBuy) * 100);\n\n  return {\n    json: {\n      name: s.name,\n      suburb: s.suburb,\n      address: s.address,\n      location: { x: s.lon, y: s.lat },\n      price_cpl: round(s.price_cpl, 1),\n      discounted_price_cpl: round(discounted_price, 1),\n      distance_km: round(distance_km, 2),\n      road_km: round(road_km, 2),\n      trip_km: round(trip_km, 2),\n      trip_cost_$: round(trip_cost_$, 2),\n      effective_price_cpl: round(effective_cpl, 1)\n    }\n  };\n});\n\n// ---- Sort best → worst by effective c/L & rank ----\nenriched.sort((a, b) => a.json.effective_price_cpl - b.json.effective_price_cpl);\nenriched.forEach((it, i) => it.json.rank = i + 1);\n\nreturn enriched;"
+        "jsCode": "// --- Origin & params ---\nconst originLat = $('Webhook').first().json.body.lat;\nconst originLon = $('Webhook').first().json.body.lon;\n\nconst litresToBuy = Number($('Webhook').first().json.body.litresToBuy ?? 40); // L\nconst lPer100     = Number($('Webhook').first().json.body.lPer100 ?? 8.5);    // L/100km\nconst roadFactor  = Number($('Webhook').first().json.body.roadFactor ?? 1.5); // road vs straight line\nconst onWay       = Boolean($('Webhook').first().json.body.onWay ?? false);   // true = one-way\n\nfunction haversine(lat1, lon1, lat2, lon2) {\n  const R = 6371;\n  const dLat = (lat2 - lat1) * Math.PI/180;\n  const dLon = (lon2 - lon1) * Math.PI/180;\n  const a = Math.sin(dLat/2)**2 +\n    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*\n    Math.sin(dLon/2)**2;\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));\n}\nconst round = (n, p=1) => Math.round(n * (10**p)) / (10**p);\n\n// ---- Ingest: support two shapes ----\nlet rawArray = $input.first()?.json?.message?.list;\nif (!Array.isArray(rawArray)) {\n  // Fall back to \"many items\" shape\n  rawArray = $input.all().map(it => it.json);\n}\n\n// ---- Normalize each station to a common shape ----\nfunction normalize(station) {\n  // If already mapped upstream (has .price), keep it\n  const alreadyMapped = station?.price != null && station?.location;\n  if (alreadyMapped) {\n    return {\n      name: station.name,\n      suburb: station.suburb,\n      address: station.address,\n      lat: station.location?.y,\n      lon: station.location?.x,\n      price_cpl: Number(station.price)\n    };\n  }\n  // Otherwise, extract from raw API object\n  return {\n    name: station.name,\n    suburb: station.suburb,\n    address: station.address,\n    lat: station.location?.y,\n    lon: station.location?.x,\n    price_cpl: Number(station?.prices?.U91?.amount)\n  };\n}\n\nconst normalized = rawArray\n  .map(normalize)\n  .filter(s =>\n    Number.isFinite(s?.lat) &&\n    Number.isFinite(s?.lon) &&\n    Number.isFinite(s?.price_cpl)\n  );\n\n// ---- Enrich with travel-aware values ----\nconst enriched = normalized.map(s => {\n  const distance_km = haversine(originLat, originLon, s.lat, s.lon);\n  const road_km     = distance_km * roadFactor;\n  const trip_km     = road_km * (onWay ? 1 : 2);\n  const trip_fuel_L = (trip_km * lPer100) / 100;\n  const trip_cost_$ = (s.price_cpl / 100) * trip_fuel_L; // price_cpl is c/L\n  const effective_cpl = s.price_cpl + ((trip_cost_$ / litresToBuy) * 100);\n\n  return {\n    json: {\n      name: s.name,\n      suburb: s.suburb,\n      address: s.address,\n      location: { x: s.lon, y: s.lat },\n      price_cpl: round(s.price_cpl, 1),\n      distance_km: round(distance_km, 2),\n      road_km: round(road_km, 2),\n      trip_km: round(trip_km, 2),\n      trip_cost_$: round(trip_cost_$, 2),\n      effective_price_cpl: round(effective_cpl, 1)\n    }\n  };\n});\n\n// ---- Sort best → worst by effective c/L & rank ----\nenriched.sort((a, b) => a.json.effective_price_cpl - b.json.effective_price_cpl);\nenriched.forEach((it, i) => it.json.rank = i + 1);\n\nreturn enriched;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -224,
+        -256,
         448
       ],
       "id": "8e7a9625-19de-4e62-8b6f-b60188c90821",
@@ -72,7 +72,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -992,
+        -832,
         448
       ],
       "id": "85a349d3-9ee3-4a04-906f-78702682b141",
@@ -81,12 +81,37 @@
     },
     {
       "parameters": {
-        "jsCode": "// Input: many items like { json: { name, suburb, address, location:{x,y}, price_cpl, discounted_price_cpl, distance_km, road_km, effective_price_cpl, ... } }\n\nfunction round(n, p=1){ return Math.round(n * (10**p)) / (10**p); }\nfunction pickBest(arr){\n  return arr.reduce((min, s) => (min && min.effective_price_cpl <= s.effective_price_cpl) ? min : s, null);\n}\nfunction amapLink(lat, lon, label){\n  const q = encodeURIComponent(label || 'Fuel');\n  return `https://maps.apple.com/?q=${q}&daddr=${lat},${lon}`;\n}\n\nconst all = $input.all().map(it => it.json)\n  .filter(s =>\n    Number.isFinite(s.effective_price_cpl) &&\n    Number.isFinite(s.distance_km) &&\n    Number.isFinite(s.road_km)\n  );\n\n// Pick by effective price in each bucket (using *driving* km)\nconst best5km  = pickBest(all.filter(s => s.road_km <= 5));\nconst best10km = pickBest(all.filter(s => s.road_km <= 10));\nconst best20km = pickBest(all.filter(s => s.road_km <= 20));\n\nfunction view(s){\n  if(!s) return null;\n  const lat = s.location?.y, lon = s.location?.x;\n  return {\n    name: s.name,\n    suburb: s.suburb,\n    address: s.address,\n    price_cpl: round(s.price_cpl, 1),\n    discounted_price_cpl: round(s.discounted_price_cpl, 1),\n    effective_price_cpl: round(s.effective_price_cpl, 1),\n    distance_km: round(s.distance_km, 2),\n    road_km: round(s.road_km, 2),\n    mapsUrl: (Number.isFinite(lat) && Number.isFinite(lon)) ? amapLink(lat, lon, s.name) : null\n  };\n}\n\n// Smart logic: only show options that are cheaper than closer options\nconst bestWithin = {};\n\n// Always check 5km first\nif (best5km) {\n  bestWithin.km5 = view(best5km);\n  \n  // Only show 10km if it's cheaper than 5km\n  if (best10km && best10km.effective_price_cpl < best5km.effective_price_cpl) {\n    bestWithin.km10 = view(best10km);\n    \n    // Only show 20km if it's cheaper than 10km\n    if (best20km && best20km.effective_price_cpl < best10km.effective_price_cpl) {\n      bestWithin.km20 = view(best20km);\n    }\n  } else if (best20km && best20km.effective_price_cpl < best5km.effective_price_cpl) {\n    // If no 10km shown, check if 20km is cheaper than 5km\n    bestWithin.km20 = view(best20km);\n  }\n} else if (best10km) {\n  // No 5km option, start with 10km\n  bestWithin.km10 = view(best10km);\n  \n  // Only show 20km if it's cheaper than 10km\n  if (best20km && best20km.effective_price_cpl < best10km.effective_price_cpl) {\n    bestWithin.km20 = view(best20km);\n  }\n} else if (best20km) {\n  // Only 20km option available\n  bestWithin.km20 = view(best20km);\n}\n\nconst summary = {\n  counts: { considered: all.length, totalInput: $input.all().length },\n  bestWithin\n};\n\nreturn [{ json: summary }];"
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U07ESV87493",
+          "mode": "list",
+          "cachedResultName": "luke"
+        },
+        "text": "=*⛽ Fuel — Best by Effective Price*\n\n*Overall:* {{ $json.bestOverall ? `${$json.bestOverall.price_cpl} c/L (eff ${$json.bestOverall.effective_price_cpl} c/L) — ${$json.bestOverall.name}, ${$json.bestOverall.suburb} (${Math.round($json.bestOverall.distance_km*10)/10} km) ${$json.bestOverall.mapsUrl ? `<${$json.bestOverall.mapsUrl}|navigate>` : ''}` : 'n/a' }}\n*Within 5 km:* {{ $json.bestWithin.km5 ? `${$json.bestWithin.km5.price_cpl} c/L (eff ${$json.bestWithin.km5.effective_price_cpl} c/L) — ${$json.bestWithin.km5.name}, ${$json.bestWithin.km5.suburb} (${Math.round($json.bestWithin.km5.distance_km*10)/10} km) ${$json.bestWithin.km5.mapsUrl ? `<${$json.bestWithin.km5.mapsUrl}|navigate>` : ''}` : 'none' }}\n*Within 10 km:* {{ $json.bestWithin.km10 ? `${$json.bestWithin.km10.price_cpl} c/L (eff ${$json.bestWithin.km10.effective_price_cpl} c/L) — ${$json.bestWithin.km10.name}, ${$json.bestWithin.km10.suburb} (${Math.round($json.bestWithin.km10.distance_km*10)/10} km) ${$json.bestWithin.km10.mapsUrl ? `<${$json.bestWithin.km10.mapsUrl}|navigate>` : ''}` : 'none' }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        624
+      ],
+      "id": "bde2a7b9-6fae-4246-9324-ea60adc8c2f4",
+      "name": "Send a message",
+      "webhookId": "0e94a685-4f9a-4f38-9847-8e21acc4fb4b"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: many items like { json: { name, suburb, address, location:{x,y}, price_cpl, distance_km, road_km, effective_price_cpl, ... } }\n\nfunction round(n, p=1){ return Math.round(n * (10**p)) / (10**p); }\nfunction pickBest(arr){\n  return arr.reduce((min, s) => (min && min.effective_price_cpl <= s.effective_price_cpl) ? min : s, null);\n}\nfunction amapLink(lat, lon, label){\n  const q = encodeURIComponent(label || 'Fuel');\n  return `https://maps.apple.com/?q=${q}&daddr=${lat},${lon}`;\n}\n\nconst all = $input.all().map(it => it.json)\n  .filter(s =>\n    Number.isFinite(s.effective_price_cpl) &&\n    Number.isFinite(s.distance_km) &&\n    Number.isFinite(s.road_km)\n  );\n\n// Pick by effective price in each bucket (using *driving* km)\nconst bestOverall = pickBest(all);\nconst best5km     = pickBest(all.filter(s => s.road_km <= 5));\nconst best10km    = pickBest(all.filter(s => s.road_km <= 10));\n\nfunction view(s){\n  if(!s) return null;\n  const lat = s.location?.y, lon = s.location?.x;\n  return {\n    name: s.name,\n    suburb: s.suburb,\n    address: s.address,\n    price_cpl: round(s.price_cpl, 1),\n    effective_price_cpl: round(s.effective_price_cpl, 1),\n    distance_km: round(s.distance_km, 2),   // straight-line (FYI)\n    road_km: round(s.road_km, 2),           // driving estimate (used for buckets)\n    mapsUrl: (Number.isFinite(lat) && Number.isFinite(lon)) ? amapLink(lat, lon, s.name) : null\n  };\n}\n\nconst summary = {\n  counts: { considered: all.length, totalInput: $input.all().length },\n  bestOverall: view(bestOverall),\n  bestWithin: {\n    km5:  view(best5km),\n    km10: view(best10km),\n  }\n};\n\nreturn [{ json: summary }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -32,
+        -64,
         448
       ],
       "id": "31109543-9edc-4a4b-83e2-b007ed68a54e",
@@ -94,12 +119,12 @@
     },
     {
       "parameters": {
-        "jsCode": "// Check if data comes from webhook body or from Set node\nconst source = $input.first().json.body || $input.first().json;\n\nconst lat = source.lat;\nconst lng = source.lon;\n\n// Earth radius in km\nconst R = 6371;\n\n// 20 km in degrees\nconst dLat = (20 / R) * (180 / Math.PI);\nconst dLng = (20 / R) * (180 / Math.PI) / Math.cos(lat * Math.PI / 180);\n\n// Bounding box\nconst neLat = lat + dLat;\nconst neLng = lng + dLng;\nconst swLat = lat - dLat;\nconst swLng = lng - dLng;\n\nreturn [\n  {\n    json: {\n      neLat,\n      neLng,\n      swLat,\n      swLng,\n    }\n  }\n];"
+        "jsCode": "// Input: { lat: -34.85, lng: 138.6 } (replace with your webhook values)\nconst lat = $input.first().json.body.lat;\nconst lng = $input.first().json.body.lon;\n\n// Earth radius in km\nconst R = 6371;\n\n// 20 km in degrees\nconst dLat = (20 / R) * (180 / Math.PI);\nconst dLng = (20 / R) * (180 / Math.PI) / Math.cos(lat * Math.PI / 180);\n\n// Bounding box\nconst neLat = lat + dLat;\nconst neLng = lng + dLng;\nconst swLat = lat - dLat;\nconst swLng = lng - dLng;\n\nreturn [\n  {\n    json: {\n      neLat,\n      neLng,\n      swLat,\n      swLng,\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -608,
+        -640,
         448
       ],
       "id": "52addfdb-22b8-461b-9595-ead3bcfc9696",
@@ -114,20 +139,20 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        592,
-        320
+        336,
+        448
       ],
       "id": "dcda77f4-7bab-44af-835b-18904c8577fe",
       "name": "Respond to Webhook"
     },
     {
       "parameters": {
-        "jsCode": "// Input: an array with one summary object\nconst summary = $input.first().json;\n\nfunction formatStation(label, s) {\n  if (!s) return null;\n  \n  // Calculate discount amount\n  const discount = s.price_cpl - s.discounted_price_cpl;\n  let discountText = '';\n  \n  if (discount === 10) {\n    discountText = ' with 10c Caltex discount';\n  } else if (discount === 4) {\n    discountText = ' with 4c EG Ampol discount';\n  }\n  \n  return `${label}: ${s.discounted_price_cpl}${discountText}, effective ${s.effective_price_cpl} at ${s.name} in ${s.suburb}, about ${Math.round(s.distance_km)} k's away.`;\n}\n\n// Build speech text\nlet parts = [];\nlet furthestShown = null;\n\nif (summary.bestWithin?.km5) {\n  parts.push(formatStation(\"Within 5 k's\", summary.bestWithin.km5));\n  furthestShown = 5;\n}\n\nif (summary.bestWithin?.km10) {\n  parts.push(formatStation(\"Within 10 k's\", summary.bestWithin.km10));\n  furthestShown = 10;\n}\n\nif (summary.bestWithin?.km20) {\n  parts.push(formatStation(\"Within 20 k's\", summary.bestWithin.km20));\n  furthestShown = 20;\n}\n\n// Add contextual ending\nlet ending = '';\nif (parts.length === 1) {\n  ending = ' This is the best price within 20 kms, no need to drive further.';\n} else if (furthestShown) {\n  ending = ` The last option is the best price within ${furthestShown} kms.`;\n}\n\nconst result = parts.filter(p => p).join(' ') + ending;\n\n// Return as a single object\nreturn [{\n  json: {\n    result: result || \"No fuel stations found.\"\n  }\n}];"
+        "jsCode": "// Input: an array with one summary object\nconst summary = $input.first().json;\n\nfunction formatStation(label, s) {\n  if (!s) return `${label}: none.`;\n  return `${label}: ${s.price_cpl}, effective ${s.effective_price_cpl} at ${s.name} in ${s.suburb}, about ${Math.round(s.distance_km)} k's away.`;\n}\n\n// Build speech text\nlet result = '';\nresult += formatStation(\"Best overall\", summary.bestOverall) + ' ';\nresult += formatStation(\"Within 5 k's'\", summary.bestWithin?.km5) + ' ';\nresult += formatStation(\"Within 10 ks\", summary.bestWithin?.km10);\n\n// Return as a single object\nreturn [{\n  json: {\n    result\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
+        128,
         448
       ],
       "id": "5fab0eb4-abe4-47aa-b038-e7783bd6f94b",
@@ -135,7 +160,7 @@
     },
     {
       "parameters": {
-        "content": "## Version Control\n\n2025-09-11 18:40 LM - init\n2025-09-15 17:44 LM - changed the Slack output to a speech response\n2025-09-15 18:40 LM - updating for more flexible mode-logic\n2025-11-13 17:49 LM - updating for when 5km is cheapest, don't read all, and include RAA and Woolies discounts\n2025-11-13 18:09 LM - added a schedule option - not convinced i'll like it ongoing\n ",
+        "content": "## Version Control\n\n2025-09-11 18:40 LM - init\n2025-09-15 17:44 LM - changed the Slack output to a speech response\n2025-09-15 18:40 LM - updating for more flexible mode-logic\n2025-11-13 17:49 LM - updating for when 5km is cheapest, don't read all, and include RAA and Woolies discounts\n ",
         "height": 480,
         "width": 940,
         "color": 4
@@ -148,115 +173,6 @@
       ],
       "id": "98434366-65d9-4bf7-afad-d9c2df05d090",
       "name": "Sticky Note3"
-    },
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "triggerAtHour": 8
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -1184,
-        288
-      ],
-      "id": "df3276b6-790d-4684-8819-b9ecd429976b",
-      "name": "8am daily"
-    },
-    {
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "\n{\n  \"lat\": -34.7730567, \n  \"lon\": 138.6760752,\n  \"litresToBuy\": 40,\n  \"lPer100\": 8.5,\n  \"roadFactor\": 1.5,\n  \"onWay\": false\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -992,
-        288
-      ],
-      "id": "c2c769aa-d4ea-49a4-8d7e-dee871ff05e2",
-      "name": "setHome"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        -800,
-        448
-      ],
-      "id": "c2ca096e-957b-4680-a3d1-1959c65e2161",
-      "name": "NoOp"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "4da5a31a-e820-4e2d-885a-9cff1490c4ec",
-              "leftValue": "={{ $('NoOp').first().json.body !== undefined }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        368,
-        448
-      ],
-      "id": "b418c74f-d424-4d89-ba7a-5c0ad54a3576",
-      "name": "IfWebhook"
-    },
-    {
-      "parameters": {
-        "select": "user",
-        "user": {
-          "__rl": true,
-          "value": "U07ESV87493",
-          "mode": "list",
-          "cachedResultName": "luke"
-        },
-        "text": "=*⛽ Fuel — Best by Effective Price*\n{{ $('setupForSlack').item.json.bestWithin.km5 ? `*Within 5 km:* ${$('setupForSlack').item.json.bestWithin.km5.discounted_price_cpl} c/L (eff ${$('setupForSlack').item.json.bestWithin.km5.effective_price_cpl} c/L) — ${$('setupForSlack').item.json.bestWithin.km5.name}, ${$('setupForSlack').item.json.bestWithin.km5.suburb} (${Math.round($('setupForSlack').item.json.bestWithin.km5.distance_km*10)/10} km) ${$('setupForSlack').item.json.bestWithin.km5.mapsUrl ? `<${$('setupForSlack').item.json.bestWithin.km5.mapsUrl}|navigate>` : ''}${$('setupForSlack').item.json.bestWithin.km5.price_cpl !== $('setupForSlack').item.json.bestWithin.km5.discounted_price_cpl ? ` 💳 ${Math.round(($('setupForSlack').item.json.bestWithin.km5.price_cpl - $('setupForSlack').item.json.bestWithin.km5.discounted_price_cpl)*10)/10}c discount` : ''}\n` : '' }}{{ $('setupForSlack').item.json.bestWithin.km10 ? `*Within 10 km:* ${$('setupForSlack').item.json.bestWithin.km10.discounted_price_cpl} c/L (eff ${$('setupForSlack').item.json.bestWithin.km10.effective_price_cpl} c/L) — ${$('setupForSlack').item.json.bestWithin.km10.name}, ${$('setupForSlack').item.json.bestWithin.km10.suburb} (${Math.round($('setupForSlack').item.json.bestWithin.km10.distance_km*10)/10} km) ${$('setupForSlack').item.json.bestWithin.km10.mapsUrl ? `<${$('setupForSlack').item.json.bestWithin.km10.mapsUrl}|navigate>` : ''}${$('setupForSlack').item.json.bestWithin.km10.price_cpl !== $('setupForSlack').item.json.bestWithin.km10.discounted_price_cpl ? ` 💳 ${Math.round(($('setupForSlack').item.json.bestWithin.km10.price_cpl - $('setupForSlack').item.json.bestWithin.km10.discounted_price_cpl)*10)/10}c discount` : ''}\n` : '' }}{{ $('setupForSlack').item.json.bestWithin.km20 ? `*Within 20 km:* ${$('setupForSlack').item.json.bestWithin.km20.discounted_price_cpl} c/L (eff ${$('setupForSlack').item.json.bestWithin.km20.effective_price_cpl} c/L) — ${$('setupForSlack').item.json.bestWithin.km20.name}, ${$('setupForSlack').item.json.bestWithin.km20.suburb} (${Math.round($('setupForSlack').item.json.bestWithin.km20.distance_km*10)/10} km) ${$('setupForSlack').item.json.bestWithin.km20.mapsUrl ? `<${$('setupForSlack').item.json.bestWithin.km20.mapsUrl}|navigate>` : ''}${$('setupForSlack').item.json.bestWithin.km20.price_cpl !== $('setupForSlack').item.json.bestWithin.km20.discounted_price_cpl ? ` 💳 ${Math.round(($('setupForSlack').item.json.bestWithin.km20.price_cpl - $('setupForSlack').item.json.bestWithin.km20.discounted_price_cpl)*10)/10}c discount` : ''}\n` : '' }}{{ !$('setupForSlack').item.json.bestWithin.km5 && !$('setupForSlack').item.json.bestWithin.km10 && !$('setupForSlack').item.json.bestWithin.km20 ? '_No stations found within 20 km_' : '' }}\n{{ $('setupForSlack').item.json.bestWithin.km10 || $('setupForSlack').item.json.bestWithin.km20 ? `\n_💡 Further options shown because they're cheaper_` : $('setupForSlack').item.json.bestWithin.km5 ? `\n_💡 Best price within 20 km — no need to drive further_` : '' }}",
-        "otherOptions": {
-          "includeLinkToWorkflow": false
-        }
-      },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        592,
-        560
-      ],
-      "id": "bde2a7b9-6fae-4246-9324-ea60adc8c2f4",
-      "name": "Send a message",
-      "webhookId": "0e94a685-4f9a-4f38-9847-8e21acc4fb4b",
-      "credentials": {
-        "slackApi": {
-          "id": "qPNRJ2gYNvlnyMvR",
-          "name": "Slack - Nathan - User OAuth Token"
-        }
-      }
     }
   ],
   "connections": {
@@ -286,7 +202,7 @@
       "main": [
         [
           {
-            "node": "NoOp",
+            "node": "setupLocationRange",
             "type": "main",
             "index": 0
           }
@@ -319,58 +235,7 @@
       "main": [
         [
           {
-            "node": "IfWebhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "8am daily": {
-      "main": [
-        [
-          {
-            "node": "setHome",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "setHome": {
-      "main": [
-        [
-          {
-            "node": "NoOp",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "NoOp": {
-      "main": [
-        [
-          {
-            "node": "setupLocationRange",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IfWebhook": {
-      "main": [
-        [
-          {
             "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Send a message",
             "type": "main",
             "index": 0
           }
