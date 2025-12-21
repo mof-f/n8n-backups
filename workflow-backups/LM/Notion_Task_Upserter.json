@@ -1,8 +1,8 @@
 {
-  "versionid": "e0ae3ece-50d5-4a22-810d-825cf5bbdf2c",
+  "versionid": "f90bb5fe-5db6-4955-b074-879a2b9c85f4",
   "workflowid": "jrYsJDy3IpZ3hpqM",
-  "createdat": "2025-12-21T05:20:27.395Z",
-  "updatedat": "2025-12-21T05:20:27.395Z",
+  "createdat": "2025-12-21T04:48:11.975Z",
+  "updatedat": "2025-12-21T04:48:11.975Z",
   "nodes": [
     {
       "parameters": {
@@ -14,8 +14,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        176,
-        464
+        -416,
+        400
       ],
       "id": "a72b6823-44ad-4257-bd65-bab0b4fb92a0",
       "name": "Sticky Note3"
@@ -30,15 +30,15 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        176,
-        368
+        -416,
+        304
       ],
       "id": "13184258-7607-47a0-bc69-f6900336dab0",
       "name": "Sticky Note"
     },
     {
       "parameters": {
-        "jsCode": "// Get the raw reminders string\nconst raw = $input.first().json.body.reminders;\n\n// Split into lines, filter empties, parse JSON\nconst reminders = raw\n  .split('\\n')\n  .filter(line => line.trim().length > 0)\n  .map(line => JSON.parse(line));\n\n// Return each reminder as its own item\nreturn reminders.map(reminder => ({\n  json: reminder\n}));"
+        "jsCode": "// Get the reminders array from webhook\nconst reminders = $input.first().json.reminders;\n// Return each reminder as a separate item for the next node to process\nreturn reminders.map(reminder => ({\n  json: reminder\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
