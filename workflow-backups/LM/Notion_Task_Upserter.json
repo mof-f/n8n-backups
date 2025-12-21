@@ -1,9 +1,48 @@
 {
-  "versionid": "f90bb5fe-5db6-4955-b074-879a2b9c85f4",
+  "versionid": "f9db8e45-f55d-4027-b467-ed76e7dd46a5",
   "workflowid": "jrYsJDy3IpZ3hpqM",
-  "createdat": "2025-12-21T04:48:11.975Z",
-  "updatedat": "2025-12-21T04:48:11.975Z",
+  "createdat": "2025-12-21T01:32:12.301Z",
+  "updatedat": "2025-12-21T01:32:12.301Z",
   "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(item => ({\n  id: item.json.id,\n  title: item.json.name,\n  notes: item.json.property_notes || \"\",\n  dueDate: item.json.property_due_date?.start || null,\n  completed: item.json.property_completed || false,\n  reminderID: item.json.property_reminder_id || \"\"\n}));\n\nreturn [{ json: { tasks } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        96
+      ],
+      "id": "04f00191-f917-491f-843f-810d8adf8054",
+      "name": "parse"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        176
+      ],
+      "id": "816b4d41-5f14-429d-b53b-6331ded62b7b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        608,
+        96
+      ],
+      "id": "f3b3a032-14e9-4806-afb8-25bdf9930ecb",
+      "name": "Respond to Webhook"
+    },
     {
       "parameters": {
         "content": "## Version Control\n2025-12-21 11:40 LM - init",
@@ -14,15 +53,15 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -416,
-        400
+        448,
+        384
       ],
       "id": "a72b6823-44ad-4257-bd65-bab0b4fb92a0",
       "name": "Sticky Note3"
     },
     {
       "parameters": {
-        "content": "# Notion Task Upserter",
+        "content": "# Notion Task Responder",
         "height": 80,
         "width": 548,
         "color": 3
@@ -30,24 +69,161 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -416,
-        304
+        448,
+        288
       ],
       "id": "13184258-7607-47a0-bc69-f6900336dab0",
       "name": "Sticky Note"
     },
     {
       "parameters": {
-        "jsCode": "// Get the reminders array from webhook\nconst reminders = $input.first().json.reminders;\n// Return each reminder as a separate item for the next node to process\nreturn reminders.map(reminder => ({\n  json: reminder\n}));"
+        "numberInputs": 3
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
       "position": [
-        -16,
-        48
+        528,
+        -256
       ],
-      "id": "ff1d14a4-1651-4f42-9a61-3f531c639dca",
-      "name": "splitArray"
+      "id": "7d67c951-c940-4c6a-8fc6-252ea0d9f923",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "28629734-f237-8011-9296-db67c90f5f75",
+          "mode": "list",
+          "cachedResultName": "GTD Tasks",
+          "cachedResultUrl": "https://www.notion.so/28629734f23780119296db67c90f5f75"
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Status|status",
+              "condition": "equals",
+              "statusValue": "Today"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        -368
+      ],
+      "id": "9f48e1c0-18c1-462a-876a-cdc942fcb745",
+      "name": "Get Personal Today Tasks",
+      "credentials": {
+        "notionApi": {
+          "id": "bJEiPdmKyoxumxIL",
+          "name": "Notion - Moff-SDL-Private"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "28629734-f237-8011-9296-db67c90f5f75",
+          "mode": "list",
+          "cachedResultName": "GTD Tasks",
+          "cachedResultUrl": "https://www.notion.so/28629734f23780119296db67c90f5f75"
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Due Date|date",
+              "condition": "equals",
+              "date": "={{ $today.toFormat('yyyy-MM-dd') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        -192
+      ],
+      "id": "8c324202-0028-4251-987e-db1b15693070",
+      "name": "Get Personal Due Today Tasks",
+      "credentials": {
+        "notionApi": {
+          "id": "bJEiPdmKyoxumxIL",
+          "name": "Notion - Moff-SDL-Private"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        0,
+        96
+      ],
+      "id": "7c7eba56-7d9b-4256-b9df-6a02dea6714e",
+      "name": "Router"
+    },
+    {
+      "parameters": {
+        "path": "c9463560-0b97-49b9-85e7-dc5275c7a1de",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        -16
+      ],
+      "id": "3777fa81-b542-4657-90fb-0786daed455e",
+      "name": "GET",
+      "webhookId": "c9463560-0b97-49b9-85e7-dc5275c7a1de",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "k9lQZ1gYvf8WoBEb",
+          "name": "Header Auth - Task Webhook"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "databaseId": {
+          "__rl": true,
+          "value": "28629734-f237-8011-9296-db67c90f5f75",
+          "mode": "list",
+          "cachedResultName": "Moff Tasks",
+          "cachedResultUrl": "https://www.notion.so/28629734f23780119296db67c90f5f75"
+        },
+        "simple": false
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        -224
+      ],
+      "id": "fb4ed981-00dd-4f3a-a62e-55170f3dee2f",
+      "name": "GetDatabaseProps",
+      "credentials": {
+        "notionApi": {
+          "id": "bJEiPdmKyoxumxIL",
+          "name": "Notion - Moff-SDL-Private"
+        }
+      }
     },
     {
       "parameters": {
@@ -60,264 +236,40 @@
           "cachedResultName": "Moff Tasks",
           "cachedResultUrl": "https://www.notion.so/28629734f23780119296db67c90f5f75"
         },
+        "limit": 100,
         "filterType": "json",
-        "filterJson": "={\n  \"and\": [\n    {\n      \"property\": \"ReminderID\",\n      \"rich_text\": {\n        \"equals\": \"{{$json.id}}\"\n      }\n    }\n  ]\n}",
+        "filterJson": "={\n  \"and\": [\n    {\n      \"property\": \"Status\",\n      \"status\": {\n        \"equals\": \"Next Action\"\n      }\n    },\n    {\n      \"property\": \"Completed\",\n      \"checkbox\": {\n        \"equals\": false\n      }\n    },\n    {\n      \"property\": \"Type\",\n      \"select\": {\n        \"does_not_equal\": \"Reference\"\n      }\n    }\n  ]\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        608,
-        160
+        192,
+        96
       ],
-      "id": "c29f19d9-c0e4-466f-9222-52122e588e76",
-      "name": "getPrevSyncdTasks",
-      "alwaysOutputData": true,
-      "executeOnce": true,
+      "id": "a2f7c2ce-21b7-4fb9-b683-9e21c7a03083",
+      "name": "Get Next Action Tasks",
       "credentials": {
         "notionApi": {
           "id": "bJEiPdmKyoxumxIL",
           "name": "Notion - Moff-SDL-Private"
         }
       }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "74f83d07-353d-4e75-9b17-3509d1a6c941",
-              "leftValue": "={{$json}}",
-              "rightValue": "",
-              "operator": {
-                "type": "object",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        800,
-        160
-      ],
-      "id": "dbe53707-c760-40fd-a99e-2a5f3fa49516",
-      "name": "IfExist"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        192,
-        48
-      ],
-      "id": "50acbe86-a037-4b53-858a-8c3339856bd5",
-      "name": "perReminder"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        416,
-        160
-      ],
-      "id": "ed9da2cc-bbd9-49d9-a822-7839103d2fa9",
-      "name": "currentItem"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        1424,
-        272
-      ],
-      "id": "2849b75c-6bdd-481b-ac9e-55d8cf9e8727",
-      "name": "."
-    },
-    {
-      "parameters": {
-        "jsCode": "// prepNotionPayload-Create \nconst reminder = $('currentItem').item.json;\n\n// Build properties object\nconst properties = {\n  'Task': {\n    title: [{ text: { content: reminder.title } }]\n  },\n  'Notes': {\n    rich_text: [{ text: { content: reminder.notes || '' } }]\n  },\n  'Completed': {\n    checkbox: reminder.completed || false\n  },\n  'ReminderID': {\n    rich_text: [{ text: { content: reminder.id } }]\n  },\n  'Type': {\n    select: { name: 'Task' }\n  },\n  'Status': {\n    status: { name: 'Inbox' }\n  }\n};\n\n// Only add Due Date if it exists and is valid\nif (reminder.dueDate && reminder.dueDate !== 'null' && reminder.dueDate !== 'Invalid date') {\n  properties['Due Date'] = {\n    date: { start: reminder.dueDate }\n  };\n}\n\n// Build the complete payload\nconst payload = {\n  parent: {\n    database_id: '28629734-f237-8011-9296-db67c90f5f75'\n  },\n  properties: properties\n};\n\nreturn [{ json: payload }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1008,
-        272
-      ],
-      "id": "af1fd8b1-7c48-4505-80ad-e812765db6a7",
-      "name": "prepNotionPayload-Create"
-    },
-    {
-      "parameters": {
-        "jsCode": "const reminder = $('currentItem').item.json;\n\n// Build properties object (only fields that might change)\nconst properties = {\n  'Task': {\n    title: [{ text: { content: reminder.title } }]\n  },\n  'Notes': {\n    rich_text: [{ text: { content: reminder.notes || '' } }]\n  },\n  'Completed': {\n    checkbox: reminder.completed || false\n  }\n};\n\n// Only add Due Date if it exists and is valid\nif (reminder.dueDate && reminder.dueDate !== 'null' && reminder.dueDate !== 'Invalid date') {\n  properties['Due Date'] = {\n    date: { start: reminder.dueDate }\n  };\n}\n\n// Return just the properties wrapped in the required structure\nreturn [{\n  json: {\n    properties: properties\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1008,
-        48
-      ],
-      "id": "141e4874-f9e1-43fe-926d-84834af8c024",
-      "name": "prepNotionPayload-Update"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.notion.com/v1/pages",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Notion-Version",
-              "value": "2022-06-28"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json) }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1216,
-        272
-      ],
-      "id": "0747651f-beb6-4e57-ac97-87ae1f163dfc",
-      "name": "POST to Notion",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "AoLRfV3kJAAxUfXj",
-          "name": "Notion - Header Auth"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "PATCH",
-        "url": "=https://api.notion.com/v1/pages/{{ $('IfExist').item.json.id }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Notion-Version",
-              "value": "2022-06-28"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json) }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1216,
-        48
-      ],
-      "id": "e535f8bb-b6e7-4eaf-81f6-793c35d6996a",
-      "name": "PATCH to Notion",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "AoLRfV3kJAAxUfXj",
-          "name": "Notion - Header Auth"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={\n  \"success\": true,\n  \"count\": \"{{$input.all().length}}\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
-      "position": [
-        416,
-        -32
-      ],
-      "id": "082f8377-0f20-4e23-a1de-37391c8186ad",
-      "name": "Respond to Webhook"
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "2c0ca133-cf0a-413a-a794-76ff7373f1a9",
-        "authentication": "headerAuth",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        -208,
-        48
-      ],
-      "id": "96fac77a-974d-4ac5-bb39-5838426f3630",
-      "name": "Webhook",
-      "webhookId": "2c0ca133-cf0a-413a-a794-76ff7373f1a9",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "k9lQZ1gYvf8WoBEb",
-          "name": "Header Auth - Task Webhook"
-        }
-      }
     }
   ],
   "connections": {
-    "splitArray": {
+    "When clicking ‘Execute workflow’": {
       "main": [
         [
           {
-            "node": "perReminder",
+            "node": "Router",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "getPrevSyncdTasks": {
-      "main": [
-        [
-          {
-            "node": "IfExist",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "perReminder": {
+    "parse": {
       "main": [
         [
           {
@@ -325,105 +277,63 @@
             "type": "main",
             "index": 0
           }
-        ],
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        []
+      ]
+    },
+    "Get Personal Today Tasks": {
+      "main": [
         [
           {
-            "node": "currentItem",
+            "node": "Merge",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IfExist": {
+    "Get Personal Due Today Tasks": {
       "main": [
         [
           {
-            "node": "prepNotionPayload-Update",
+            "node": "Merge",
             "type": "main",
-            "index": 0
+            "index": 1
           }
-        ],
+        ]
+      ]
+    },
+    "Router": {
+      "main": [
         [
           {
-            "node": "prepNotionPayload-Create",
+            "node": "Get Next Action Tasks",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "currentItem": {
+    "GET": {
       "main": [
         [
           {
-            "node": "getPrevSyncdTasks",
+            "node": "Router",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    ".": {
+    "Get Next Action Tasks": {
       "main": [
         [
           {
-            "node": "perReminder",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "prepNotionPayload-Create": {
-      "main": [
-        [
-          {
-            "node": "POST to Notion",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "POST to Notion": {
-      "main": [
-        [
-          {
-            "node": ".",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "prepNotionPayload-Update": {
-      "main": [
-        [
-          {
-            "node": "PATCH to Notion",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "PATCH to Notion": {
-      "main": [
-        [
-          {
-            "node": ".",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Webhook": {
-      "main": [
-        [
-          {
-            "node": "splitArray",
+            "node": "parse",
             "type": "main",
             "index": 0
           }
