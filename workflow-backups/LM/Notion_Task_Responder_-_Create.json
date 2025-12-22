@@ -1,8 +1,8 @@
 {
-  "versionid": "cc8322b3-0e7b-4571-a430-432e2ff5b28e",
+  "versionid": "1d8075bd-0faa-49ad-87be-e94f2a04cafa",
   "workflowid": "HN5jmqI5jixCfaXm",
-  "createdat": "2025-12-21T08:35:59.518Z",
-  "updatedat": "2025-12-21T08:35:59.518Z",
+  "createdat": "2025-12-22T09:55:36.651Z",
+  "updatedat": "2025-12-22T09:55:36.651Z",
   "nodes": [
     {
       "parameters": {
@@ -122,7 +122,7 @@
         },
         "limit": 100,
         "filterType": "json",
-        "filterJson": "={\n  \"and\": [\n    {\n      \"property\": \"Status\",\n      \"status\": {\n        \"equals\": \"Next Action\"\n      }\n    },\n    {\n      \"property\": \"Completed\",\n      \"checkbox\": {\n        \"equals\": false\n      }\n    },\n    {\n      \"property\": \"Type\",\n      \"select\": {\n        \"does_not_equal\": \"Reference\"\n      }\n    }\n  ]\n}",
+        "filterJson": "={\n  \"and\": [\n    {\n      \"or\": [\n        {\n          \"property\": \"Status\",\n          \"status\": {\n            \"equals\": \"Next Action\"\n          }\n        },\n        {\n          \"property\": \"Status\",\n          \"status\": {\n            \"equals\": \"Today\"\n          }\n        }\n      ]\n    },\n    {\n      \"property\": \"Completed\",\n      \"checkbox\": {\n        \"equals\": false\n      }\n    },\n    {\n      \"property\": \"Type\",\n      \"select\": {\n        \"does_not_equal\": \"Reference\"\n      }\n    },\n    {\n      \"property\": \"ReminderID\",\n      \"rich_text\": {\n        \"is_empty\": true\n      }\n    }\n  ]\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.notion",
