@@ -1,1 +1,90 @@
-{"versionid":"893a919e-76fb-42e1-98ec-f54e6de683a3","workflowid":"ojQdrMWBIfJA1ZoU","createdat":"2026-04-12T01:06:27.635Z","updatedat":"2026-04-12T01:06:27.635Z","nodes":[{"parameters":{"httpMethod":"POST","path":"\\","options":{}},"type":"n8n-nodes-base.webhook","typeVersion":2.1,"position":[0,0],"id":"1387a0ed-cccd-448f-ba60-0b28d549d43e","name":"Webhook","webhookId":"46031689-4fc1-4aea-8ff1-f6d04e9b0071"}],"connections":{},"workflow_name":"Apple Health Sync - Health Auto Export"}
+{
+  "versionid": "0a77754e-ed38-4312-ad33-9abd56130d8b",
+  "workflowid": "ojQdrMWBIfJA1ZoU",
+  "createdat": "2026-04-12T01:02:47.401Z",
+  "updatedat": "2026-04-12T01:47:49.041Z",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "apple-health-test",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -272,
+        -128
+      ],
+      "id": "1387a0ed-cccd-448f-ba60-0b28d549d43e",
+      "name": "Webhook",
+      "webhookId": "46031689-4fc1-4aea-8ff1-f6d04e9b0071",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "MZn71vK2Dr6HLl7f",
+          "name": "Apple Health - Webhook Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const metrics = $input.first().json.body.data.metrics;\nconst rows = [];\n\nfor (const metric of metrics) {\n  for (const entry of metric.data) {\n    rows.push({\n      json: {\n        metric_name: metric.name,\n        recorded_at: entry.date ?? entry.sleepStart ?? null,\n        source:      entry.source ?? null,\n        raw:         JSON.stringify(entry),\n      }\n    });\n  }\n}\n\nreturn rows;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        -128
+      ],
+      "id": "8e859925-9763-40ed-a588-96e49affa950",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO personal.apple_health_raw (\n    metric_name,\n    recorded_at,\n    source,\n    raw\n)\nVALUES (\n    '{{ $json.metric_name }}',\n    '{{ $json.recorded_at }}'::timestamptz,\n    '{{ $json.source }}',\n    '{{ $json.raw }}'::jsonb\n)\nON CONFLICT (metric_name, recorded_at, source) DO UPDATE SET\n    raw       = EXCLUDED.raw,\n    synced_at = now();",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        144,
+        -128
+      ],
+      "id": "673ff599-e28a-4b90-80a8-66eaa32bcf41",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "g17YnMWQWdvNOGyX",
+          "name": "Postgres - postgres_fullaccess"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "workflow_name": "Apple Health Sync - Health Auto Export"
+}
